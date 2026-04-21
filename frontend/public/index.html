@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Branded Vehicle Report — Zypp</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:#0a0f1e;--surface:#111827;--card:#161f30;--border:#1e2d45;
+  --accent:#00e5a0;--text:#e8f0fe;--muted:#6b7fa3;
+  --green:#00e5a0;--orange:#ff6b35;--purple:#7c6fff;--yellow:#ffd166;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;}
+
+.header{background:linear-gradient(135deg,#0a0f1e 0%,#0d1a2e 100%);border-bottom:1px solid var(--border);padding:18px 36px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px);}
+.logo{font-family:'Inter',sans-serif;font-size:20px;font-weight:800;color:var(--accent);}
+.logo span{color:var(--text);}
+.header-right{display:flex;align-items:center;gap:10px;}
+.header-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-align:right;}
+.header-meta strong{color:var(--accent);display:block;font-size:12px;}
+
+#syncBar{display:flex;align-items:center;gap:10px;padding:8px 36px;background:var(--surface);border-bottom:1px solid var(--border);font-size:12px;font-family:'JetBrains Mono',monospace;}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;}
+.sync-dot.green{background:var(--green);box-shadow:0 0 6px var(--green);}
+.sync-dot.yellow{background:var(--yellow);animation:pulse 1.2s infinite;}
+.sync-dot.red{background:var(--orange);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+#syncMsg{color:var(--muted);flex:1;}
+
+.btn-sm{padding:5px 14px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;border:none;transition:all .2s;}
+.btn-primary{background:var(--accent);color:#0a0f1e;}
+.btn-primary:hover{opacity:.85;}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent);}
+.btn-outline:hover{background:var(--accent);color:#0a0f1e;}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn-ghost:hover{border-color:var(--text);color:var(--text);}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.hidden{display:none;}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:32px;max-width:560px;width:100%;position:relative;}
+.modal h2{font-family:'Inter',sans-serif;font-size:20px;font-weight:800;margin-bottom:6px;}
+.modal .sub{color:var(--muted);font-size:13px;margin-bottom:22px;line-height:1.6;}
+.step{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;line-height:1.55;}
+.step:last-of-type{border-bottom:none;}
+.step-n{min-width:22px;height:22px;border-radius:50%;background:var(--accent);color:#0a0f1e;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;margin-top:2px;flex-shrink:0;}
+.step a{color:var(--accent);text-decoration:none;}
+.step a:hover{text-decoration:underline;}
+.step code{background:var(--surface);padding:1px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--yellow);}
+.input-row{display:flex;gap:10px;margin-top:20px;}
+.modal input[type=text]{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;outline:none;font-family:'JetBrains Mono',monospace;transition:border-color .2s;}
+.modal input[type=text]:focus{border-color:var(--accent);}
+.modal input::placeholder{color:var(--muted);}
+.modal-note{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5;}
+.modal-close{position:absolute;top:16px;right:16px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;}
+.modal-close:hover{color:var(--text);}
+
+/* MAPPER */
+.mtabs{display:flex;gap:4px;margin-bottom:14px;}
+.mtab{padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;background:var(--border);color:var(--muted);transition:all .15s;}
+.mtab.active{background:var(--accent);color:#0a0f1e;}
+.mgrid{display:grid;grid-template-columns:1fr 22px 1fr;gap:8px;align-items:center;max-height:320px;overflow-y:auto;padding-right:4px;}
+.mgrid-hdr{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.scol{background:var(--surface);border-radius:6px;padding:7px 10px;font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text);border:1px solid var(--border);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.marr{color:var(--muted);text-align:center;font-size:12px;}
+.mgrid select{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--text);font-size:12px;font-family:'JetBrains Mono',monospace;outline:none;width:100%;}
+.mgrid select:focus{border-color:var(--accent);}
+
+/* MAIN */
+.main{padding:28px 36px;max-width:1500px;margin:0 auto;}
+.title-row{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:26px;}
+.page-title{font-family:'Inter',sans-serif;font-size:32px;font-weight:800;line-height:1;}
+.page-title span{color:var(--accent);}
+.subtitle{color:var(--muted);font-size:13px;margin-top:6px;}
+
+/* KPIs */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:26px;}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;}
+.kpi-card:hover{transform:translateY(-2px);border-color:var(--accent);}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.kpi-card.green::before{background:var(--green);}
+.kpi-card.orange::before{background:var(--orange);}
+.kpi-card.purple::before{background:var(--purple);}
+.kpi-card.yellow::before{background:var(--yellow);}
+.kpi-card.blue::before{background:#4fa3f7;}
+.kpi-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-family:'JetBrains Mono',monospace;margin-bottom:8px;}
+.kpi-value{font-family:'Inter',sans-serif;font-size:24px;font-weight:700;}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+.kpi-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;margin-top:6px;font-family:'JetBrains Mono',monospace;}
+.badge-green{background:rgba(0,229,160,.15);color:var(--green);}
+.badge-orange{background:rgba(255,107,53,.15);color:var(--orange);}
+.badge-yellow{background:rgba(255,209,102,.15);color:var(--yellow);}
+
+.tab-bar{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:22px;width:fit-content;}
+.tab{padding:7px 18px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;color:var(--muted);border:none;background:none;font-family:'Inter',sans-serif;}
+.tab.active{background:var(--accent);color:#0a0f1e;font-weight:700;}
+.tab:hover:not(.active){color:var(--text);background:var(--border);}
+
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:26px;}
+.table-hbar{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface);gap:10px;}
+.table-hbar h3{font-family:'Inter',sans-serif;font-size:14px;font-weight:700;}
+.tright{display:flex;align-items:center;gap:10px;}
+.tcnt{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+.tsnote{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);}
+table{width:100%;border-collapse:collapse;}
+thead th{background:rgba(255,255,255,.03);padding:10px 14px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:nowrap;border-bottom:1px solid var(--border);}
+thead th.ec{color:var(--accent);}
+tbody tr{border-bottom:1px solid rgba(30,45,69,.6);transition:background .15s;}
+tbody tr:hover{background:rgba(0,229,160,.04);}
+tbody tr:last-child{border-bottom:none;}
+td{padding:11px 14px;font-size:13px;color:var(--text);vertical-align:middle;}
+td.mono{font-family:'JetBrains Mono',monospace;font-size:12px;}
+td.muted{color:var(--muted);font-size:12px;}
+
+/* editable cells */
+td.editable{cursor:text;}
+td.editable .cdisplay{display:flex;align-items:center;gap:5px;}
+td.editable .eicon{opacity:0;font-size:10px;color:var(--muted);transition:opacity .15s;}
+td.editable:hover .eicon{opacity:1;}
+td.editable:hover{background:rgba(0,229,160,.06);border-radius:4px;}
+td.editable input{display:none;width:90px;background:var(--bg);border:1px solid var(--accent);border-radius:6px;padding:4px 8px;color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;outline:none;box-shadow:0 0 0 3px rgba(0,229,160,.12);}
+td.editable.editing .cdisplay{display:none;}
+td.editable.editing input{display:block;}
+td.saving{opacity:.5;pointer-events:none;}
+@keyframes flashG{0%,100%{color:inherit}50%{color:var(--green)}}
+@keyframes flashR{0%,100%{color:inherit}50%{color:var(--orange)}}
+td.save-ok .vt{animation:flashG .6s;}
+td.save-err .vt{animation:flashR .6s;}
+
+.status{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.status::before{content:'';width:5px;height:5px;border-radius:50%;}
+.status.active{background:rgba(0,229,160,.12);color:var(--green);}
+.status.active::before{background:var(--green);}
+.status.expired{background:rgba(255,107,53,.12);color:var(--orange);}
+.status.expired::before{background:var(--orange);}
+.status.pending{background:rgba(255,209,102,.12);color:var(--yellow);}
+.status.pending::before{background:var(--yellow);}
+.status.completed{background:rgba(124,111,255,.12);color:var(--purple);}
+.status.completed::before{background:var(--purple);}
+.rp{color:var(--green);font-weight:600;}
+.rn{color:var(--orange);font-weight:600;}
+
+.form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:16px 18px;background:var(--surface);border-top:1px solid var(--border);}
+.fg label{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;font-family:'JetBrains Mono',monospace;}
+.fg input,.fg select{width:100%;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;}
+.fg input:focus,.fg select:focus{border-color:var(--accent);}
+.fg select option{background:var(--card);}
+.btn-add{background:var(--accent);color:#0a0f1e;border:none;padding:9px 20px;border-radius:7px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s;align-self:flex-end;}
+.btn-add:hover{opacity:.85;}
+
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:26px;}
+.bar-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(30,45,69,.4);}
+.bar-row:last-child{border-bottom:none;}
+.bar-label{font-size:12px;color:var(--text);min-width:90px;}
+.bar-track{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;transition:width 1s ease;}
+.bar-val{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);min-width:70px;text-align:right;}
+
+.report-footer{margin-top:36px;border-top:1px solid var(--border);padding:18px 0;display:flex;justify-content:space-between;align-items:center;}
+.footer-note{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+
+<!-- SETUP MODAL -->
+<div class="modal-overlay hidden" id="setupModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeSetup()">✕</button>
+    <h2>🔗 Connect Backend Service Account</h2>
+    <p class="sub">This report requires a Google Cloud Service Account to read and write your sheets securely via the Node.js backend.</p>
+    <div class="step"><div class="step-n">1</div><div>Go to your project directory.</div></div>
+    <div class="step"><div class="step-n">2</div><div>Place your Google Service Account key in <code>service-account.json</code> at the root.</div></div>
+    <div class="step"><div class="step-n">3</div><div>Ensure the Service Account email is granted <strong>Editor</strong> access to the 3 sheets.</div></div>
+    <div class="input-row">
+      <button class="btn-sm btn-primary" onclick="checkBackend()">Retry Connection ↻</button>
+    </div>
+    <p class="modal-note">🔒 Running on local secure backend.</p>
+  </div>
+</div>
+
+<!-- MAPPER MODAL -->
+<div class="modal-overlay hidden" id="mapperModal">
+  <div class="modal" style="max-width:640px;">
+    <button class="modal-close" onclick="document.getElementById('mapperModal').classList.add('hidden')">✕</button>
+    <h2>📐 Column Mapping</h2>
+    <p class="sub">We auto‑detected your sheet headers. Confirm the mapping so the report knows which column holds which field. Repeat for each sheet tab.</p>
+    <div class="mtabs" id="mtabs"></div>
+    <div style="display:grid;grid-template-columns:1fr 22px 1fr;gap:8px;margin-bottom:8px;">
+      <div class="mgrid-hdr">Sheet Column</div><div></div><div class="mgrid-hdr">Maps To</div>
+    </div>
+    <div class="mgrid" id="mgrid"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn-sm btn-ghost" onclick="document.getElementById('mapperModal').classList.add('hidden')">Skip</button>
+      <button class="btn-sm btn-primary" onclick="confirmMapping()">Save &amp; Reload</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">ZYPP <span>FLEET BRANDING</span></div>
+  <div class="header-right">
+    <div class="header-meta"><strong>BRANDED VEHICLE REPORT</strong><span id="rDate"></span></div>
+    <button class="btn-sm btn-outline" id="btnConn" onclick="document.getElementById('setupModal').classList.remove('hidden')">🔗 Backend Setup</button>
+    <button class="btn-sm btn-ghost" id="btnSignOut" style="display:none" onclick="location.reload()">Reset</button>
+  </div>
+</div>
+
+<!-- SYNC BAR -->
+<div id="syncBar">
+  <div class="sync-dot" id="sdot"></div>
+  <span id="syncMsg">Not connected — click "Connect Sheets" to link your Google Sheets data.</span>
+  <button class="btn-sm btn-ghost" id="btnRef" style="display:none" onclick="loadAll()">↻ Refresh</button>
+  <button class="btn-sm btn-ghost" id="btnMap" style="display:none" onclick="openMapper()">⚙ Column Map</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="title-row">
+    <div>
+      <div class="page-title">Fleet <span>Branding</span> Overview</div>
+      <div class="subtitle">3‑Wheeler · 2‑Wheeler · Helmet — Cost, Revenue &amp; Tenure Tracker</div>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card green"><div class="kpi-label">Total Branded</div><div class="kpi-value" id="kT">—</div><div class="kpi-sub">Vehicles + Helmets</div><span class="kpi-badge badge-green">ALL ASSETS</span></div>
+    <div class="kpi-card orange"><div class="kpi-label">Total Branding Cost</div><div class="kpi-value" id="kC">—</div><div class="kpi-sub">Cumulative spend</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">Total Revenue</div><div class="kpi-value" id="kR">—</div><div class="kpi-sub">Billed to brand</div></div>
+    <div class="kpi-card yellow"><div class="kpi-label">Net Margin</div><div class="kpi-value" id="kM">—</div><div class="kpi-sub">Revenue − Cost</div></div>
+    <div class="kpi-card blue"><div class="kpi-label">Active Contracts</div><div class="kpi-value" id="kA">—</div><div class="kpi-sub">Currently live</div></div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('3w',this)">🛺 3‑Wheeler</button>
+    <button class="tab" onclick="switchTab('2w',this)">🛵 2‑Wheeler</button>
+    <button class="tab" onclick="switchTab('helmet',this)">🪖 Helmet</button>
+    <button class="tab" onclick="switchTab('user',this)">👤 User Data</button>
+    <button class="tab" onclick="switchTab('summary',this)">📊 Summary</button>
+  </div>
+
+  <!-- panels generated by JS -->
+  <div id="panels"></div>
+
+  <div class="report-footer">
+    <div class="footer-note">Zypp Fleet Management · <span id="lastSync"></span></div>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────
+const SHEET_IDS = {
+  '3w':     '1fsTazqEiGvN9RSnD3d7F38COFyu_Bw2vEJyyH5fakI8',
+  '2w':     '1fsTazqEiGvN9RSnD3d7F38COFyu_Bw2vEJyyH5fakI8',
+  'helmet': '1fsTazqEiGvN9RSnD3d7F38COFyu_Bw2vEJyyH5fakI8',
+  'user':   '1fsTazqEiGvN9RSnD3d7F38COFyu_Bw2vEJyyH5fakI8'
+};
+const SHEET_TABS = {'3w':'3 Wheeler', '2w':'2 Wheeler', 'helmet':'helmet', 'user':'In - App'};
+const TYPES = ['3w','2w','helmet','user'];
+const TYPE_LABELS = {'3w':'🛺 3-Wheeler','2w':'🛵 2-Wheeler','helmet':'🪖 Helmet','user':'👤 User Data'};
+const TYPE_ICONS  = {'3w':'🛺','2w':'🛵','helmet':'🪖','user':'👤'};
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+
+const FIELD_DEFS = [
+  {key:'veh',    label:'Vehicle / ID',   kw:['vehicle','reg','number','veh','registration','helmet','batch','id','car no']},
+  {key:'driver', label:'Driver / Rider', kw:['driver','rider','name','person','assigned','chalak']},
+  {key:'city',   label:'City / Hub',     kw:['city','hub','location','area','zone','region']},
+  {key:'brand',  label:'Brand Name',     kw:['brand','client','campaign','advertiser','company']},
+  {key:'date',   label:'Date',           kw:['date','start','branded','from','branding date','applied']},
+  {key:'tenure', label:'Tenure (Days)',  kw:['tenure','days','duration','period','months']},
+  {key:'cost',   label:'Branding Cost',  kw:['cost','expense','spend','branding cost','amount paid','charges']},
+  {key:'rev',    label:'Revenue',        kw:['revenue','income','billed','charge','amount received','price']},
+  {key:'imps',   label:'Impressions',    kw:['impressions','imps','views']},
+  {key:'revUSD', label:'Revenue ($)',    kw:['revenue ($)','rev us','usd']},
+  {key:'ecpm',   label:'eCPM ($)',       kw:['ecpm','ecpm ($)']},
+  {key:'view',   label:'Viewability',    kw:['viewability','viewability (%)']},
+  {key:'revINR', label:'Total Rev (₹)',  kw:['total revenue in rs','revenue in rs','inr','total rev']},
+  {key:'SKIP',   label:'— Skip —',       kw:[]},
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────
+let connected = false;
+const store   = {data:{'3w':[],'2w':[],'helmet':[],'user':[]}, colMap:{'3w':{},'2w':{},'helmet':{},'user':{}}, headers:{'3w':[],'2w':[],'helmet':[],'user':[]}};
+let mapperType = '3w';
+
+// ─── UTILS ────────────────────────────────────────────────────────────
+document.getElementById('rDate').textContent = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+const fmtINR = n=>'₹'+Number(n||0).toLocaleString('en-IN');
+const fmtD   = d=>d instanceof Date ? d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : d;
+function parseD(s){if(!s)return new Date();const p=s.split(/[-\/]/);return p.length===3?new Date(p[0],p[1]-1,p[2]):new Date(s);}
+function status(dateStr,tenure){
+  const e=new Date(parseD(dateStr)); e.setDate(e.getDate()+(+tenure||0));
+  const d=Math.ceil((e-new Date())/864e5);
+  if(d>30) return{label:'Active',cls:'active',d,e};
+  if(d>0)  return{label:'Expiring',cls:'pending',d,e};
+  return{label:'Expired',cls:'expired',d,e};
+}
+function setSS(state,msg){
+  document.getElementById('sdot').className='sync-dot '+(state==='ok'?'green':state==='loading'?'yellow':state==='error'?'red':'');
+  document.getElementById('syncMsg').textContent=msg;
+}
+function setTN(type,msg,c='var(--muted)'){const el=document.getElementById('tn-'+type);if(el){el.textContent=msg;el.style.color=c;}}
+
+// ─── BUILD PANEL HTML ─────────────────────────────────────────────────
+function buildPanels(){
+  const wrap = document.getElementById('panels');
+  wrap.innerHTML = '';
+  TYPES.forEach((type,ti)=>{
+    const isFirst = ti===0;
+    const div = document.createElement('div');
+    div.className = 'tab-panel'+(isFirst?' active':'');
+    div.id = 'panel-'+type;
+    div.innerHTML = `
+    <div class="table-wrap">
+      <div class="table-hbar">
+        <h3>${TYPE_ICONS[type]} ${TYPE_LABELS[type]} Branded Vehicles</h3>
+        <div class="tright"><span class="tsnote" id="tn-${type}"></span><span class="tcnt" id="cnt-${type}">0 records</span></div>
+      </div>
+      <table><thead>
+        ${type==='user' ? `
+        <tr>
+          <th>#</th><th>Date</th><th class="ec">Impressions</th><th class="ec">Revenue ($)</th>
+          <th class="ec">eCPM ($)</th><th class="ec">Viewability (%)</th><th class="ec">Total Revenue (₹)</th>
+        </tr>` : `
+        <tr>
+          <th>#</th><th>Vehicle / ID</th><th>Driver / Rider</th><th>City / Hub</th><th>Brand</th>
+          <th>Branding Date</th><th>Tenure</th><th>Tenure End</th>
+          <th class="ec">Branding Cost (₹) ✎</th><th class="ec">Revenue (₹) ✎</th><th class="ec">Net (₹)</th><th>Status</th>
+        </tr>`}
+      </thead><tbody id="body-${type}"></tbody></table>
+    </div>`;
+    wrap.appendChild(div);
+  });
+
+  // Summary panel
+  const sum = document.createElement('div');
+  sum.className='tab-panel'; sum.id='panel-summary';
+  sum.innerHTML=`
+  <div class="two-col">
+    <div class="table-wrap">
+      <div class="table-hbar"><h3>📊 Cost vs Revenue by Asset Type</h3></div>
+      <div style="padding:18px;">
+        ${TYPES.map(t=>`
+        <div class="bar-row"><span class="bar-label">${TYPE_ICONS[t]} Cost</span><div class="bar-track"><div class="bar-fill" id="bc-${t}" style="width:0%;background:var(--orange)"></div></div><span class="bar-val" id="bcl-${t}">₹0</span></div>
+        <div class="bar-row"><span class="bar-label" style="color:var(--green)">${TYPE_ICONS[t]} Revenue</span><div class="bar-track"><div class="bar-fill" id="br-${t}" style="width:0%;background:var(--green)"></div></div><span class="bar-val" id="brl-${t}">₹0</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-hbar"><h3>📋 Tenure &amp; Status Summary</h3></div>
+      <table><thead><tr><th>Asset</th><th>Count</th><th>Active</th><th>Expired</th><th>Avg Tenure</th><th>Net (₹)</th></tr></thead>
+      <tbody id="sumTbody"></tbody></table>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <div class="table-hbar"><h3>📅 Contracts Expiring Soon (next 30 days)</h3></div>
+    <table><thead><tr><th>Asset</th><th>Vehicle / ID</th><th>Assignee</th><th>Brand</th><th>City</th><th>Tenure End</th><th>Days Left</th><th>Revenue (₹)</th></tr></thead>
+    <tbody id="expiryTbody"></tbody></table>
+  </div>`;
+  wrap.appendChild(sum);
+}
+
+// ─── RENDER TABLE ─────────────────────────────────────────────────────
+function makeEditable(colorCls, val, onSave){
+  const td = document.createElement('td');
+  td.className = 'mono editable '+colorCls;
+  const disp = document.createElement('div'); disp.className='cdisplay';
+  disp.innerHTML = `<span class="vt">${fmtINR(val)}</span><span class="eicon">✎</span>`;
+  const inp = document.createElement('input'); inp.type='number'; inp.value=val; inp.min=0;
+  td.appendChild(disp); td.appendChild(inp);
+
+  disp.addEventListener('click',()=>{ td.classList.add('editing'); inp.focus(); inp.select(); });
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter') inp.blur(); if(e.key==='Escape') td.classList.remove('editing'); });
+  inp.addEventListener('blur', async()=>{
+    const nv=parseFloat(inp.value);
+    if(isNaN(nv)||nv<0){td.classList.remove('editing');return;}
+    disp.querySelector('.vt').textContent=fmtINR(nv);
+    td.classList.remove('editing'); td.classList.add('saving');
+    const ok = await onSave(nv);
+    td.classList.remove('saving'); td.classList.add(ok?'save-ok':'save-err');
+    setTimeout(()=>td.classList.remove('save-ok','save-err'),700);
+  });
+  return td;
+}
+
+function netTd(r){ const td=document.createElement('td'); refreshNet(td,r); return td; }
+function refreshNet(td,r){ const n=r.rev-r.cost; td.className='mono '+(n>=0?'rp':'rn'); td.textContent=fmtINR(n); }
+
+
+
+function renderTable(type){
+  const tbody=document.getElementById('body-'+type);
+  if(!tbody)return;
+  tbody.innerHTML='';
+  const rows=store.data[type];
+  document.getElementById('cnt-'+type).textContent=rows.length+' records';
+  if(!rows.length){
+    tbody.innerHTML=`<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">${connected?'No data found in this sheet':'Connect Google Sheets to load data.'}</td></tr>`;
+    return;
+  }
+  rows.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    if(type==='user'){
+      tr.innerHTML=`
+        <td class="mono">${i+1}</td>
+        <td class="mono muted">${r.date||'—'}</td>
+        <td class="mono">${r.imps||'—'}</td>
+        <td class="mono">${r.revUSD||'—'}</td>
+        <td class="mono">${r.ecpm||'—'}</td>
+        <td class="mono">${r.view||'—'}</td>
+        <td class="mono rp">${fmtINR(r.revINR)}</td>`;
+    } else {
+      const st=status(r.date,r.tenure);
+      tr.innerHTML=`
+        <td class="mono">${i+1}</td>
+        <td><strong>${r.veh||'—'}</strong></td>
+        <td>${r.driver||'—'}</td>
+        <td class="muted">${r.city||'—'}</td>
+        <td><span style="background:rgba(0,229,160,.1);color:var(--accent);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;">${r.brand||'—'}</span></td>
+        <td class="mono muted">${r.date||'—'}</td>
+        <td class="mono">${r.tenure?r.tenure+'d':'—'}</td>
+        <td class="mono muted">${r.date?fmtD(st.e):'—'}</td>`;
+
+      const nTd = netTd(r);
+      const cTd = makeEditable('rn', r.cost, async nv=>{
+        store.data[type][i].cost=nv; refreshNet(nTd,store.data[type][i]); updateKPIs(); updateSummary();
+        if(connected) return await writeCell(type,r,'cost',nv);
+        return true;
+      });
+      tr.appendChild(cTd);
+
+      const rvTd = makeEditable('rp', r.rev, async nv=>{
+        store.data[type][i].rev=nv; refreshNet(nTd,store.data[type][i]); updateKPIs(); updateSummary();
+        if(connected) return await writeCell(type,r,'rev',nv);
+        return true;
+      });
+      tr.appendChild(rvTd);
+      tr.appendChild(nTd);
+
+      const stTd=document.createElement('td');
+      stTd.innerHTML=`<span class="status ${st.cls}">${st.label}${st.d>0?' ('+st.d+'d)':''}</span>`;
+      tr.appendChild(stTd);
+    }
+    tbody.appendChild(tr);
+  });
+  updateKPIs(); updateSummary();
+}
+
+// ─── KPIs ─────────────────────────────────────────────────────────────
+function updateKPIs(){
+  let tot=0,cost=0,rev=0,active=0;
+  TYPES.forEach(t=>{
+    store.data[t].forEach(r=>{
+      if(t !== 'user') {
+        tot++;
+        if(status(r.date,r.tenure).cls!=='expired') active++;
+        cost += r.cost||0;
+        rev += r.rev||0;
+      } else {
+        // For User/In-App, we only add the INR revenue to the total
+        rev += r.revINR||0;
+      }
+    });
+  });
+  document.getElementById('kT').textContent=tot;
+  document.getElementById('kC').textContent=fmtINR(cost);
+  document.getElementById('kR').textContent=fmtINR(rev);
+  const m=rev-cost;
+  document.getElementById('kM').textContent=fmtINR(m);
+  document.getElementById('kM').style.color=m>=0?'var(--green)':'var(--orange)';
+  document.getElementById('kA').textContent=active;
+}
+
+// ─── SUMMARY ──────────────────────────────────────────────────────────
+function updateSummary(){
+  let maxV=0; const stats={};
+  TYPES.forEach(t=>{
+    let cnt=0,act=0,exp=0,tt=0,cost=0,rev=0;
+    store.data[t].forEach(r=>{cnt++;tt+=+r.tenure||0;cost+=r.cost||0;rev+=r.rev||0;status(r.date,r.tenure).cls==='expired'?exp++:act++;});
+    stats[t]={cnt,act,exp,avg:cnt?Math.round(tt/cnt):0,cost,rev,net:rev-cost};
+    maxV=Math.max(maxV,cost,rev);
+  });
+  const sBody=document.getElementById('sumTbody'); if(!sBody)return;
+  sBody.innerHTML='';
+  TYPES.forEach(t=>{
+    const s=stats[t],tr=document.createElement('tr');
+    tr.innerHTML=`<td>${TYPE_LABELS[t]}</td><td class="mono">${s.cnt}</td>
+      <td><span class="status active">${s.act}</span></td>
+      <td><span class="status ${s.exp?'expired':'completed'}">${s.exp}</span></td>
+      <td class="mono">${s.avg}d</td>
+      <td class="mono ${s.net>=0?'rp':'rn'}">${fmtINR(s.net)}</td>`;
+    sBody.appendChild(tr);
+  });
+  TYPES.forEach(t=>{
+    const s=stats[t], sc=maxV>0?v=>Math.round(v/maxV*100):()=>0;
+    document.getElementById('bc-'+t).style.width=sc(s.cost)+'%';
+    document.getElementById('bcl-'+t).textContent=fmtINR(s.cost);
+    document.getElementById('br-'+t).style.width=sc(s.rev)+'%';
+    document.getElementById('brl-'+t).textContent=fmtINR(s.rev);
+  });
+  const eBody=document.getElementById('expiryTbody'); if(!eBody)return;
+  eBody.innerHTML=''; let found=false;
+  TYPES.forEach(t=>store.data[t].forEach(r=>{
+    const st=status(r.date,r.tenure);
+    if(st.d>=0&&st.d<=30){found=true;const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${TYPE_LABELS[t]}</td><td><strong>${r.veh}</strong></td><td>${r.driver}</td>
+        <td>${r.brand}</td><td class="muted">${r.city}</td><td class="mono">${fmtD(st.e)}</td>
+        <td><span class="kpi-badge ${st.d<=7?'badge-orange':'badge-yellow'}">${st.d}d left</span></td>
+        <td class="mono rp">${fmtINR(r.rev)}</td>`;
+      eBody.appendChild(tr);
+    }
+  }));
+  if(!found) eBody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted);">No contracts expiring in the next 30 days</td></tr>';
+}
+
+function switchTab(type,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-'+type).classList.add('active');
+  if(type==='summary') updateSummary();
+}
+
+// ─── BACKEND CONFIG ───────────────────────────────────────────────────
+function closeSetup(){document.getElementById('setupModal').classList.add('hidden');}
+
+async function checkBackend(){
+  setSS('loading','Connecting to Node.js Backend…');
+  try {
+    const res = await fetch('/api/config');
+    const data = await res.json();
+    if(data.configured) {
+        connected = true;
+        setSS('ok', 'Connected to backend.');
+        document.getElementById('btnConn').style.display='none';
+        document.getElementById('btnRef').style.display='';
+        document.getElementById('btnMap').style.display='';
+        loadAll();
+    } else {
+        setSS('error', data.message);
+        document.getElementById('setupModal').classList.remove('hidden');
+    }
+  } catch(e) {
+    setSS('error','Backend not reachable.');
+  }
+}
+
+// ─── LOAD SHEETS ──────────────────────────────────────────────────────
+async function loadAll(){
+  setSS('loading','Loading data from Google Sheets…');
+  TYPES.forEach(t=>setTN(t,'⟳ Loading…','var(--yellow)'));
+  let ok=true;
+  for(const type of TYPES){
+    try{
+      const res=await fetch(`/api/sheets/read?spreadsheetId=${SHEET_IDS[type]}&range=${SHEET_TABS[type]}`);
+      const data=await res.json();
+      if(data.error) throw new Error(data.error);
+      const rows=data.values||[];
+      if(rows.length<2){setTN(type,'Empty sheet');store.data[type]=[];renderTable(type);continue;}
+      store.headers[type]=rows[0].map(h=>String(h).trim());
+      if(!Object.keys(store.colMap[type]).length) autoMap(type);
+      parseSheet(type,rows);
+      setTN(type,'✓ Synced','var(--green)');
+    }catch(e){
+      console.error(type,e);
+      setTN(type,'⚠ '+e.message,'var(--orange)');
+      ok=false;
+    }
+  }
+  setSS(ok?'ok':'error',ok?'All sheets synced ✓':'Some sheets had errors — see table notes above.');
+  document.getElementById('lastSync').textContent='Last sync: '+new Date().toLocaleTimeString('en-IN');
+  updateKPIs(); updateSummary();
+}
+
+function autoMap(type){
+  store.colMap[type]={};
+  const used=new Set();
+  FIELD_DEFS.filter(f=>f.key!=='SKIP').forEach(field=>{
+    let bi=-1,bs=0;
+    store.headers[type].forEach((h,i)=>{
+      if(used.has(i))return;
+      const hl=h.toLowerCase();
+      let sc=0; field.kw.forEach(k=>{if(hl.includes(k))sc+=k.length;});
+      if(sc>bs){bs=sc;bi=i;}
+    });
+    if(bi>=0&&bs>0){store.colMap[type][field.key]=bi;used.add(bi);}
+  });
+  localStorage.setItem('zypp_map_'+type,JSON.stringify(store.colMap[type]));
+}
+
+function getV(row,type,key){
+  const idx=store.colMap[type][key];
+  return(idx!==undefined&&idx<row.length)?String(row[idx]||'').trim():'';
+}
+
+function parseSheet(type,rows){
+  store.data[type]=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i];
+    if(!r||r.every(c=>!c))continue;
+    store.data[type].push({
+      veh:    getV(r,type,'veh')||(type!=='user'?`Row ${i}`:''),
+      driver: getV(r,type,'driver'),
+      city:   getV(r,type,'city'),
+      brand:  getV(r,type,'brand'),
+      date:   getV(r,type,'date'),
+      tenure: parseInt(getV(r,type,'tenure'))||0,
+      cost:   parseFloat(String(getV(r,type,'cost')).replace(/[₹,\s]/g,''))||0,
+      rev:    parseFloat(String(getV(r,type,'rev')).replace(/[₹,\s]/g,''))||0,
+      imps:   getV(r,type,'imps'),
+      revUSD: getV(r,type,'revUSD'),
+      ecpm:   getV(r,type,'ecpm'),
+      view:   getV(r,type,'view'),
+      revINR: parseFloat(String(getV(r,type,'revINR')).replace(/[₹,\s]/g,''))||0,
+      _rowIdx:i
+    });
+  }
+  renderTable(type);
+}
+
+// ─── WRITE CELL ───────────────────────────────────────────────────────
+async function writeCell(type,record,field,val){
+  const ci=store.colMap[type][field]; if(ci===undefined)return false;
+  const letter=colLetter(ci), shRow=record._rowIdx+1;
+  try{
+    const res=await fetch('/api/sheets/update', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({spreadsheetId:SHEET_IDS[type], range:`${SHEET_TABS[type]}!${letter}${shRow}`, value:val})
+    });
+    const r = await res.json();
+    if(r.error) throw new Error(r.error);
+    setSS('ok','Saved to Google Sheets ✓');
+    document.getElementById('lastSync').textContent='Last sync: '+new Date().toLocaleTimeString('en-IN');
+    return true;
+  }catch(e){
+    setSS('error','Write failed: '+e.message);
+    return false;
+  }
+}
+
+async function appendRow(type,row){
+  const maxIdx=Math.max(0,...Object.values(store.colMap[type]));
+  const arr=new Array(maxIdx+1).fill('');
+  Object.entries(store.colMap[type]).forEach(([k,i])=>{ if(row[k]!==undefined)arr[i]=row[k]; });
+  try{
+    const res=await fetch('/api/sheets/append', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({spreadsheetId:SHEET_IDS[type], range:`${SHEET_TABS[type]}!A1`, values:arr})
+    });
+    const r=await res.json();
+    if(r.error) throw new Error(r.error);
+    setSS('ok','Row appended to Google Sheets ✓');
+    document.getElementById('lastSync').textContent='Last sync: '+new Date().toLocaleTimeString('en-IN');
+  }catch(e){ setSS('error','Append failed: '+e.message); }
+}
+
+function colLetter(idx){
+  let r=''; idx++;
+  while(idx>0){const rem=(idx-1)%26;r=String.fromCharCode(65+rem)+r;idx=Math.floor((idx-rem)/26);}
+  return r;
+}
+
+// ─── COLUMN MAPPER UI ─────────────────────────────────────────────────
+function openMapper(){
+  document.getElementById('mapperModal').classList.remove('hidden');
+  buildMTabs(); renderMGrid(mapperType);
+}
+function buildMTabs(){
+  const el=document.getElementById('mtabs'); el.innerHTML='';
+  TYPES.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='mtab'+(t===mapperType?' active':'');
+    b.textContent=TYPE_LABELS[t];
+    b.onclick=()=>{mapperType=t;buildMTabs();renderMGrid(t);};
+    el.appendChild(b);
+  });
+}
+function renderMGrid(type){
+  const g=document.getElementById('mgrid'); g.innerHTML='';
+  store.headers[type].forEach((hdr,ci)=>{
+    const sc=document.createElement('div'); sc.className='scol'; sc.textContent=hdr||`Col ${ci+1}`;
+    const ar=document.createElement('div'); ar.className='marr'; ar.textContent='→';
+    const sel=document.createElement('select');
+    FIELD_DEFS.forEach(f=>{
+      const o=document.createElement('option'); o.value=f.key; o.textContent=f.label;
+      const mapped=Object.entries(store.colMap[type]).find(([k,v])=>v===ci);
+      if(mapped&&mapped[0]===f.key) o.selected=true;
+      else if(!mapped&&f.key==='SKIP') o.selected=true;
+      sel.appendChild(o);
+    });
+    sel.dataset.ci=ci; g.appendChild(sc); g.appendChild(ar); g.appendChild(sel);
+  });
+}
+function confirmMapping(){
+  const type=mapperType; store.colMap[type]={};
+  document.querySelectorAll('#mgrid select').forEach(s=>{
+    const k=s.value,i=+s.dataset.ci; if(k!=='SKIP') store.colMap[type][k]=i;
+  });
+  localStorage.setItem('zypp_map_'+type,JSON.stringify(store.colMap[type]));
+  document.getElementById('mapperModal').classList.add('hidden');
+  loadAll();
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────
+// Restore saved column maps
+TYPES.forEach(t=>{const s=localStorage.getItem('zypp_map_'+t);if(s)try{store.colMap[t]=JSON.parse(s);}catch(e){}});
+buildPanels();
+TYPES.forEach(t=>renderTable(t));
+updateKPIs();
+
+window.addEventListener('load',()=>setTimeout(checkBackend,600));
+</script>
+</body>
+</html>

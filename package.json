@@ -1,0 +1,16 @@
+{
+  "name": "zypp-branded-vehicle-report",
+  "version": "1.0.0",
+  "description": "Branded vehicle report with Google Sheets integration",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "googleapis": "^140.0.0"
+  }
+}
