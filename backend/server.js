@@ -14,10 +14,24 @@ app.use(express.static(path.join(__dirname, '../frontend/public')));
 // Configure standard Google APIs Auth Client
 async function getAuth() {
     try {
-        const auth = new google.auth.GoogleAuth({
-            keyFile: process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(__dirname, '../service-account.json'),
+        let authConfig = {
             scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-        });
+        };
+
+        // Support for Vercel Environment Variable (JSON String)
+        if (process.env.GOOGLE_SERVICE_ACCOUNT) {
+            try {
+                authConfig.credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
+                console.log("Using credentials from GOOGLE_SERVICE_ACCOUNT env var.");
+            } catch (e) {
+                console.error("Failed to parse GOOGLE_SERVICE_ACCOUNT env var:", e);
+            }
+        } else {
+            // Fallback to local file
+            authConfig.keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS || path.join(__dirname, '../service-account.json');
+        }
+
+        const auth = new google.auth.GoogleAuth(authConfig);
         return await auth.getClient();
     } catch (e) {
         console.error("Failed to initialize Google Auth:", e);
@@ -101,6 +115,10 @@ app.post('/api/sheets/update', async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Server is running on http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;
