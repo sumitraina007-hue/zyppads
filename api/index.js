@@ -50,6 +50,13 @@ app.get('/api/config', async (req, res) => {
     }
 });
 
+// Serve frontend config
+app.get('/api/config/client', (req, res) => {
+    res.json({
+        spreadsheetId: process.env.SPREADSHEET_ID || '1fsTazqEiGvN9RSnD3d7F38COFyu_Bw2vEJyyH5fakI8'
+    });
+});
+
 // Read Google Sheets
 app.get('/api/sheets/read', async (req, res) => {
     const { spreadsheetId, range } = req.query;

@@ -255,12 +255,7 @@ td.save-err .vt{animation:flashR .6s;}
 
 <script>
 // ─── CONFIG ───────────────────────────────────────────────────────────
-const SHEET_IDS = {
-  '3w':     '1fsTazqEiGvN9RSnD3d7F38COFyu_Bw2vEJyyH5fakI8',
-  '2w':     '1fsTazqEiGvN9RSnD3d7F38COFyu_Bw2vEJyyH5fakI8',
-  'helmet': '1fsTazqEiGvN9RSnD3d7F38COFyu_Bw2vEJyyH5fakI8',
-  'user':   '1fsTazqEiGvN9RSnD3d7F38COFyu_Bw2vEJyyH5fakI8'
-};
+let SHEET_IDS = {};
 const SHEET_TABS = {'3w':'3 Wheeler', '2w':'2 Wheeler', 'helmet':'helmet', 'user':'In - App'};
 const TYPES = ['3w','2w','helmet','user'];
 const TYPE_LABELS = {'3w':'🛺 3-Wheeler','2w':'🛵 2-Wheeler','helmet':'🪖 Helmet','user':'👤 User Data'};
@@ -545,6 +540,12 @@ async function checkBackend(){
     const res = await fetch('/api/config');
     const data = await res.json();
     if(data.configured) {
+        // Fetch SpreadSheet ID from backend
+        const cRes = await fetch('/api/config/client');
+        const cData = await cRes.json();
+        const sid = cData.spreadsheetId;
+        SHEET_IDS = { '3w':sid, '2w':sid, 'helmet':sid, 'user':sid };
+
         connected = true;
         setSS('ok', 'Connected to backend.');
         document.getElementById('btnConn').style.display='none';
