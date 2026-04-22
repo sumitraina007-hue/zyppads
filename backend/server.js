@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3002; // Using 3002 to avoid conflict with exis
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, '../frontend/public')));
 
 // Configure standard Google APIs Auth Client
 async function getAuth() {
