@@ -99,7 +99,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 .tab.active{background:var(--accent);color:#0a0f1e;font-weight:700;}
 .tab:hover:not(.active){color:var(--text);background:var(--border);}
 
-.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:26px;}
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow-x:auto;margin-bottom:26px;-webkit-overflow-scrolling:touch;}
 .table-hbar{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface);gap:10px;}
 .table-hbar h3{font-family:'Inter',sans-serif;font-size:14px;font-weight:700;}
 .tright{display:flex;align-items:center;gap:10px;}
@@ -164,6 +164,54 @@ td.save-err .vt{animation:flashR .6s;}
 
 .report-footer{margin-top:36px;border-top:1px solid var(--border);padding:18px 0;display:flex;justify-content:space-between;align-items:center;}
 .footer-note{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+
+@media (max-width: 768px) {
+  .header { padding: 12px 16px; flex-direction: column; align-items: flex-start; gap: 12px; }
+  .header-right { width: 100%; justify-content: space-between; }
+  .header-meta { text-align: left; }
+  
+  #syncBar { padding: 8px 16px; flex-wrap: wrap; }
+  #syncMsg { width: 100%; margin-bottom: 8px; }
+  
+  .main { padding: 16px; }
+  .title-row { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .page-title { font-size: 24px; }
+  
+  .kpi-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .kpi-card { padding: 14px; }
+  .kpi-value { font-size: 18px; }
+  
+  .tab-bar { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; display: flex; gap: 2px; }
+  .tab { padding: 6px 12px; font-size: 12px; flex-shrink: 0; }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  
+  .table-wrap { margin-bottom: 20px; border-radius: 8px; }
+  .table-hbar { padding: 12px 16px; flex-direction: column; align-items: flex-start; gap: 10px; }
+  .tright { width: 100%; justify-content: space-between; align-items: center; }
+  
+  .two-col { grid-template-columns: 1fr; }
+  
+  .form-grid { grid-template-columns: 1fr; }
+  
+  .modal { padding: 20px; }
+  .mgrid { grid-template-columns: 1fr 22px 1fr; max-height: 250px; }
+  .scol { font-size: 11px; padding: 5px 8px; }
+  
+  .report-footer { flex-direction: column; gap: 12px; text-align: center; }
+}
+
+@media (max-width: 480px) {
+  .kpi-row { grid-template-columns: 1fr; }
+  .header-right { flex-direction: column; align-items: flex-start; }
+  .btn-sm { width: 100%; text-align: center; }
+}
+
+/* PAGINATION */
+.pagination{display:flex;justify-content:center;align-items:center;gap:15px;padding:16px;background:var(--surface);border-top:1px solid var(--border);}
+.pg-btn{background:var(--card);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:'JetBrains Mono',monospace;transition:all .2s;}
+.pg-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+.pg-btn:disabled{opacity:.4;cursor:not-allowed;}
+.pg-info{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--muted);}
 </style>
 </head>
 <body>
@@ -261,6 +309,7 @@ const TYPES = ['3w','2w','helmet','user'];
 const TYPE_LABELS = {'3w':'🛺 3-Wheeler','2w':'🛵 2-Wheeler','helmet':'🪖 Helmet','user':'👤 User Data'};
 const TYPE_ICONS  = {'3w':'🛺','2w':'🛵','helmet':'🪖','user':'👤'};
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+const PAGE_SIZE = 50;
 
 const FIELD_DEFS = [
   {key:'veh',    label:'Vehicle / ID',   kw:['vehicle','reg','number','veh','registration','helmet','batch','id','car no']},
@@ -282,7 +331,12 @@ const FIELD_DEFS = [
 
 // ─── STATE ────────────────────────────────────────────────────────────
 let connected = false;
-const store   = {data:{'3w':[],'2w':[],'helmet':[],'user':[]}, colMap:{'3w':{},'2w':{},'helmet':{},'user':{}}, headers:{'3w':[],'2w':[],'helmet':[],'user':[]}};
+const store   = {
+  data:{'3w':[],'2w':[],'helmet':[],'user':[]}, 
+  colMap:{'3w':{},'2w':{},'helmet':{},'user':{}}, 
+  headers:{'3w':[],'2w':[],'helmet':[],'user':[]},
+  currentPage:{'3w':1,'2w':1,'helmet':1,'user':1}
+};
 let mapperType = '3w';
 
 // ─── UTILS ────────────────────────────────────────────────────────────
@@ -348,6 +402,8 @@ function buildPanels(){
       </thead><tbody id="body-${type}"></tbody></table>
     </div>`;
     wrap.appendChild(div);
+    const pg = document.createElement('div'); pg.id = 'pg-'+type; pg.className='pagination';
+    div.appendChild(pg);
   });
 
   // Summary panel
@@ -410,16 +466,29 @@ function renderTable(type){
   if(!tbody)return;
   tbody.innerHTML='';
   const rows=store.data[type];
-  document.getElementById('cnt-'+type).textContent=rows.length+' records';
+  const page = store.currentPage[type];
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  
+  // Slice rows for pagination
+  const start = (page - 1) * PAGE_SIZE;
+  const end = Math.min(start + PAGE_SIZE, rows.length);
+  const pageRows = rows.slice(start, end);
+
+  const rangeInfo = rows.length ? `${start + 1}-${end} of ${rows.length} records` : '0 records';
+  document.getElementById('cnt-'+type).textContent = rangeInfo;
+
   if(!rows.length){
     tbody.innerHTML=`<tr><td colspan="12" style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">${connected?'No data found in this sheet':'Connect Google Sheets to load data.'}</td></tr>`;
+    renderPagination(type, 1, 1);
     return;
   }
-  rows.forEach((r,i)=>{
+
+  pageRows.forEach((r,i)=>{
+    const actualIdx = start + i;
     const tr=document.createElement('tr');
     if(type==='user'){
       tr.innerHTML=`
-        <td class="mono">${i+1}</td>
+        <td class="mono">${actualIdx+1}</td>
         <td class="mono muted">${r.date||'—'}</td>
         <td class="mono">${r.imps||'—'}</td>
         <td class="mono">${r.revUSD||'—'}</td>
@@ -429,7 +498,7 @@ function renderTable(type){
     } else {
       const st=status(r.date,r.tenure,r.tenureEnd);
       tr.innerHTML=`
-        <td class="mono">${i+1}</td>
+        <td class="mono">${actualIdx+1}</td>
         <td><strong>${r.veh||'—'}</strong></td>
         <td>${r.driver||'—'}</td>
         <td class="muted">${r.city||'—'}</td>
@@ -440,14 +509,14 @@ function renderTable(type){
 
       const nTd = netTd(r);
       const cTd = makeEditable('rn', r.cost, async nv=>{
-        store.data[type][i].cost=nv; refreshNet(nTd,store.data[type][i]); updateKPIs(); updateSummary();
+        store.data[type][actualIdx].cost=nv; refreshNet(nTd,store.data[type][actualIdx]); updateKPIs(); updateSummary();
         if(connected) return await writeCell(type,r,'cost',nv);
         return true;
       });
       tr.appendChild(cTd);
 
       const rvTd = makeEditable('rp', r.rev, async nv=>{
-        store.data[type][i].rev=nv; refreshNet(nTd,store.data[type][i]); updateKPIs(); updateSummary();
+        store.data[type][actualIdx].rev=nv; refreshNet(nTd,store.data[type][actualIdx]); updateKPIs(); updateSummary();
         if(connected) return await writeCell(type,r,'rev',nv);
         return true;
       });
@@ -460,7 +529,30 @@ function renderTable(type){
     }
     tbody.appendChild(tr);
   });
+  
+  renderPagination(type, page, totalPages);
   updateKPIs(); updateSummary();
+}
+
+function renderPagination(type, page, totalPages){
+  const pg = document.getElementById('pg-'+type);
+  if(!pg) return;
+  if(store.data[type].length <= PAGE_SIZE) {
+    pg.style.display = 'none';
+    return;
+  }
+  pg.style.display = 'flex';
+  pg.innerHTML = `
+    <button class="pg-btn" ${page <= 1 ? 'disabled' : ''} onclick="changePage('${type}', ${page - 1})">Previous</button>
+    <div class="pg-info">Page ${page} of ${totalPages}</div>
+    <button class="pg-btn" ${page >= totalPages ? 'disabled' : ''} onclick="changePage('${type}', ${page + 1})">Next</button>
+  `;
+}
+
+function changePage(type, newPage){
+  store.currentPage[type] = newPage;
+  renderTable(type);
+  document.querySelector('.main').scrollIntoView({behavior:'smooth'});
 }
 
 // ─── KPIs ─────────────────────────────────────────────────────────────
@@ -571,7 +663,7 @@ async function checkBackend(){
 // ─── LOAD SHEETS ──────────────────────────────────────────────────────
 async function loadAll(){
   setSS('loading','Loading data from Google Sheets…');
-  TYPES.forEach(t=>setTN(t,'⟳ Loading…','var(--yellow)'));
+  TYPES.forEach(t=>{setTN(t,'⟳ Loading…','var(--yellow)'); store.currentPage[t]=1;});
   let ok=true;
   for(const type of TYPES){
     try{
