@@ -268,7 +268,8 @@ const FIELD_DEFS = [
   {key:'city',   label:'City / Hub',     kw:['city','hub','location','area','zone','region']},
   {key:'brand',  label:'Brand Name',     kw:['brand','client','campaign','advertiser','company']},
   {key:'date',   label:'Date',           kw:['date','start','branded','from','branding date','applied']},
-  {key:'tenure', label:'Tenure (Days)',  kw:['tenure','days','duration','period','months']},
+  {key:'tenure', label:'Tenure',         kw:['tenure','duration','period','months']},
+  {key:'tenureEnd', label:'Tenure End',  kw:['tenure end','end date','expiry']},
   {key:'cost',   label:'Branding Cost',  kw:['cost','expense','spend','branding cost','amount paid','charges']},
   {key:'rev',    label:'Revenue',        kw:['revenue','income','billed','charge','amount received','price']},
   {key:'imps',   label:'Impressions',    kw:['impressions','imps','views']},
@@ -299,8 +300,14 @@ function parseD(s){
   }
   return new Date(s);
 }
-function status(dateStr,tenure){
-  const e=new Date(parseD(dateStr)); e.setDate(e.getDate()+(+tenure||0));
+function status(dateStr,tenureStr,tenureEndStr){
+  let e;
+  if(tenureEndStr){
+    e=new Date(parseD(tenureEndStr));
+  } else {
+    e=new Date(parseD(dateStr)); 
+    e.setDate(e.getDate()+(parseInt(tenureStr)||0));
+  }
   const d=Math.ceil((e-new Date())/864e5);
   if(d>30) return{label:'Active',cls:'active',d,e};
   if(d>0)  return{label:'Expiring',cls:'pending',d,e};
@@ -420,7 +427,7 @@ function renderTable(type){
         <td class="mono">${r.view||'—'}</td>
         <td class="mono rp">${fmtINR(r.revINR)}</td>`;
     } else {
-      const st=status(r.date,r.tenure);
+      const st=status(r.date,r.tenure,r.tenureEnd);
       tr.innerHTML=`
         <td class="mono">${i+1}</td>
         <td><strong>${r.veh||'—'}</strong></td>
@@ -428,8 +435,8 @@ function renderTable(type){
         <td class="muted">${r.city||'—'}</td>
         <td><span style="background:rgba(0,229,160,.1);color:var(--accent);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;">${r.brand||'—'}</span></td>
         <td class="mono muted">${r.date||'—'}</td>
-        <td class="mono">${r.tenure?r.tenure+'d':'—'}</td>
-        <td class="mono muted">${r.date?fmtD(st.e):'—'}</td>`;
+        <td class="mono">${r.tenure||'—'}</td>
+        <td class="mono muted">${fmtD(st.e)}</td>`;
 
       const nTd = netTd(r);
       const cTd = makeEditable('rn', r.cost, async nv=>{
@@ -463,7 +470,7 @@ function updateKPIs(){
     store.data[t].forEach(r=>{
       if(t !== 'user') {
         tot++;
-        if(status(r.date,r.tenure).cls!=='expired') active++;
+        if(status(r.date,r.tenure,r.tenureEnd).cls!=='expired') active++;
         cost += r.cost||0;
         rev += r.rev||0;
       } else {
@@ -486,7 +493,7 @@ function updateSummary(){
   let maxV=0; const stats={};
   TYPES.forEach(t=>{
     let cnt=0,act=0,exp=0,tt=0,cost=0,rev=0;
-    store.data[t].forEach(r=>{cnt++;tt+=+r.tenure||0;cost+=r.cost||0;rev+=r.rev||0;status(r.date,r.tenure).cls==='expired'?exp++:act++;});
+    store.data[t].forEach(r=>{cnt++;tt+=parseInt(r.tenure)||0;cost+=r.cost||0;rev+=r.rev||0;status(r.date,r.tenure,r.tenureEnd).cls==='expired'?exp++:act++;});
     stats[t]={cnt,act,exp,avg:cnt?Math.round(tt/cnt):0,cost,rev,net:rev-cost};
     maxV=Math.max(maxV,cost,rev);
   });
@@ -620,7 +627,8 @@ function parseSheet(type,rows){
       city:   getV(r,type,'city'),
       brand:  getV(r,type,'brand'),
       date:   getV(r,type,'date'),
-      tenure: parseInt(getV(r,type,'tenure'))||0,
+      tenure: getV(r,type,'tenure'),
+      tenureEnd: getV(r,type,'tenureEnd'),
       cost:   parseFloat(String(getV(r,type,'cost')).replace(/[₹,\s]/g,''))||0,
       rev:    parseFloat(String(getV(r,type,'rev')).replace(/[₹,\s]/g,''))||0,
       imps:   getV(r,type,'imps'),
