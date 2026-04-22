@@ -964,7 +964,7 @@ function confirmMapping(){
 }
 
 // ─── LOGIN ────────────────────────────────────────────────────────────
-const LOGIN_HASH = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'; // sha256 of 'Zypp@2024'
+const LOGIN_HASH = '57147ee57b991ff253c01cce00b0f624e5f043eefd818952b5158f1d18cb19db'; // sha256 of 'Zypp@2024'
 
 async function sha256(str){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
