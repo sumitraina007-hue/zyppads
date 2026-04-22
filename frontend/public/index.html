@@ -608,6 +608,7 @@ function autoMap(type){
     });
     if(bi>=0&&bs>0){store.colMap[type][field.key]=bi;used.add(bi);}
   });
+  store.colMap[type]._v = 1;
   localStorage.setItem('zypp_map_'+type,JSON.stringify(store.colMap[type]));
 }
 
@@ -727,7 +728,15 @@ function confirmMapping(){
 
 // ─── BOOT ─────────────────────────────────────────────────────────────
 // Restore saved column maps
-TYPES.forEach(t=>{const s=localStorage.getItem('zypp_map_'+t);if(s)try{store.colMap[t]=JSON.parse(s);}catch(e){}});
+TYPES.forEach(t=>{
+  const s=localStorage.getItem('zypp_map_'+t);
+  if(s){
+    try{
+      const parsed = JSON.parse(s);
+      if(parsed._v) store.colMap[t] = parsed;
+    }catch(e){}
+  }
+});
 buildPanels();
 TYPES.forEach(t=>renderTable(t));
 updateKPIs();
