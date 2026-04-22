@@ -293,7 +293,17 @@ let mapperType = '3w';
 document.getElementById('rDate').textContent = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
 const fmtINR = n=>'₹'+Number(n||0).toLocaleString('en-IN');
 const fmtD   = d=>d instanceof Date ? d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : d;
-function parseD(s){if(!s)return new Date();const p=s.split(/[-\/]/);return p.length===3?new Date(p[0],p[1]-1,p[2]):new Date(s);}
+function parseD(s){
+  if(!s) return new Date();
+  const p = String(s).split(/[-\/]/);
+  if(p.length === 3) {
+    // If the 3rd part is a 4-digit year (DD/MM/YYYY)
+    if(p[2].length === 4) return new Date(p[2], p[1]-1, p[0]);
+    // If the 1st part is a 4-digit year (YYYY/MM/DD)
+    if(p[0].length === 4) return new Date(p[0], p[1]-1, p[2]);
+  }
+  return new Date(s);
+}
 function status(dateStr,tenure){
   const e=new Date(parseD(dateStr)); e.setDate(e.getDate()+(+tenure||0));
   const d=Math.ceil((e-new Date())/864e5);
