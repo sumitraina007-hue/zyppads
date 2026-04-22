@@ -213,9 +213,115 @@ td.save-err .vt{animation:flashR .6s;}
 .pg-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
 .pg-btn:disabled{opacity:.4;cursor:not-allowed;}
 .pg-info{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--muted);}
+
+/* ── LOGIN SCREEN ──────────────────────────────────────────────── */
+#loginScreen{
+  position:fixed;inset:0;z-index:9999;
+  background:linear-gradient(135deg,#060b17 0%,#0a1528 50%,#060b17 100%);
+  display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:0;
+  transition:opacity .4s,visibility .4s;
+}
+#loginScreen.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+
+.login-box{
+  background:var(--card);border:1px solid var(--border);border-radius:20px;
+  padding:44px 40px 36px;width:100%;max-width:420px;
+  box-shadow:0 0 60px rgba(0,229,160,.07),0 24px 80px rgba(0,0,0,.6);
+  position:relative;overflow:hidden;
+}
+.login-box::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--accent),var(--purple),var(--accent));
+  background-size:200%;animation:shimmer 2.5s linear infinite;
+}
+@keyframes shimmer{0%{background-position:0%}100%{background-position:200%}}
+
+.login-logo{
+  font-family:'Inter',sans-serif;font-size:26px;font-weight:800;
+  color:var(--accent);letter-spacing:-.5px;margin-bottom:4px;
+}
+.login-logo span{color:var(--text);}
+.login-tagline{
+  font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;
+  margin-bottom:32px;
+}
+
+.login-label{
+  display:block;font-size:11px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.8px;font-family:'JetBrains Mono',monospace;margin-bottom:8px;
+}
+.login-input-wrap{position:relative;margin-bottom:20px;}
+.login-input{
+  width:100%;background:var(--surface);border:1.5px solid var(--border);
+  border-radius:10px;padding:13px 44px 13px 16px;
+  color:var(--text);font-size:15px;font-family:'Inter',sans-serif;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+}
+.login-input:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(0,229,160,.12);
+}
+.login-input.err{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,107,53,.12);}
+.login-eye{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;
+  padding:0;line-height:1;transition:color .15s;
+}
+.login-eye:hover{color:var(--text);}
+
+.login-btn{
+  width:100%;background:var(--accent);color:#060b17;border:none;
+  border-radius:10px;padding:14px;font-size:15px;font-weight:800;
+  font-family:'Inter',sans-serif;cursor:pointer;
+  transition:opacity .2s,transform .1s;letter-spacing:.3px;
+}
+.login-btn:hover{opacity:.88;}
+.login-btn:active{transform:scale(.98);}
+
+.login-err{
+  color:var(--orange);font-size:12px;font-family:'JetBrains Mono',monospace;
+  margin-top:-12px;margin-bottom:16px;min-height:18px;
+}
+
+.login-footer{
+  text-align:center;font-size:11px;color:var(--muted);
+  font-family:'JetBrains Mono',monospace;margin-top:24px;
+}
+
+/* floating orbs behind login */
+.orb{
+  position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;
+  animation:float 8s ease-in-out infinite alternate;
+}
+.orb1{width:320px;height:320px;background:rgba(0,229,160,.08);top:-80px;left:-80px;animation-delay:0s;}
+.orb2{width:260px;height:260px;background:rgba(124,111,255,.07);bottom:-60px;right:-60px;animation-delay:-3s;}
+.orb3{width:180px;height:180px;background:rgba(0,229,160,.05);bottom:30%;left:20%;animation-delay:-5s;}
+@keyframes float{0%{transform:translate(0,0);}100%{transform:translate(20px,20px);}}
 </style>
 </head>
 <body>
+
+<!-- ─── LOGIN SCREEN ──────────────────────────────────────────── -->
+<div id="loginScreen">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+  <div class="login-box">
+    <div class="login-logo">ZYPP <span>FLEET BRANDING</span></div>
+    <div class="login-tagline">// BRANDED VEHICLE REPORT · SECURE ACCESS</div>
+    <label class="login-label" for="loginPass">Access Password</label>
+    <div class="login-input-wrap">
+      <input class="login-input" id="loginPass" type="password"
+             placeholder="Enter password"
+             onkeydown="if(event.key==='Enter')doLogin()">
+      <button class="login-eye" id="eyeBtn" onclick="toggleEye()" title="Show/hide">👁</button>
+    </div>
+    <div class="login-err" id="loginErr"></div>
+    <button class="login-btn" id="loginBtn" onclick="doLogin()">Access Dashboard →</button>
+    <div class="login-footer">Zypp Fleet · Internal Use Only&nbsp;🔒</div>
+  </div>
+</div>
 
 <!-- SETUP MODAL -->
 <div class="modal-overlay hidden" id="setupModal">
@@ -857,22 +963,66 @@ function confirmMapping(){
   loadAll();
 }
 
-// ─── BOOT ─────────────────────────────────────────────────────────────
-// Restore saved column maps
-TYPES.forEach(t=>{
-  const s=localStorage.getItem('zypp_map_'+t);
-  if(s){
-    try{
-      const parsed = JSON.parse(s);
-      if(parsed._v) store.colMap[t] = parsed;
-    }catch(e){}
-  }
-});
-buildPanels();
-TYPES.forEach(t=>renderTable(t));
-updateKPIs();
+// ─── LOGIN ────────────────────────────────────────────────────────────
+const LOGIN_HASH = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'; // sha256 of 'Zypp@2024'
 
-window.addEventListener('load',()=>setTimeout(checkBackend,600));
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin(){
+  const btn = document.getElementById('loginBtn');
+  const inp = document.getElementById('loginPass');
+  const err = document.getElementById('loginErr');
+  if(!inp.value){err.textContent='Please enter the password.';inp.classList.add('err');return;}
+  btn.textContent='Verifying…';btn.disabled=true;
+  const hash = await sha256(inp.value);
+  if(hash===LOGIN_HASH){
+    sessionStorage.setItem('zypp_auth','1');
+    document.getElementById('loginScreen').classList.add('hidden');
+    bootDashboard();
+  } else {
+    err.textContent='Incorrect password. Please try again.';
+    inp.classList.add('err');
+    inp.value='';
+    inp.focus();
+  }
+  btn.textContent='Access Dashboard →';btn.disabled=false;
+}
+
+function toggleEye(){
+  const inp=document.getElementById('loginPass');
+  const eye=document.getElementById('eyeBtn');
+  if(inp.type==='password'){inp.type='text';eye.textContent='🙈';}
+  else{inp.type='password';eye.textContent='👁';}
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────
+function bootDashboard(){
+  // Restore saved column maps
+  TYPES.forEach(t=>{
+    const s=localStorage.getItem('zypp_map_'+t);
+    if(s){
+      try{
+        const parsed = JSON.parse(s);
+        if(parsed._v) store.colMap[t] = parsed;
+      }catch(e){}
+    }
+  });
+  buildPanels();
+  TYPES.forEach(t=>renderTable(t));
+  updateKPIs();
+  setTimeout(checkBackend,600);
+}
+
+// Check session on page load
+if(sessionStorage.getItem('zypp_auth')==='1'){
+  document.getElementById('loginScreen').classList.add('hidden');
+  window.addEventListener('load',bootDashboard);
+} else {
+  window.addEventListener('load',()=>document.getElementById('loginPass').focus());
+}
 </script>
 </body>
 </html>
