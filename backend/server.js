@@ -12,7 +12,9 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend/public')));
 
 // Configure standard Google APIs Auth Client
+let cachedAuthClient = null;
 async function getAuth() {
+    if (cachedAuthClient) return cachedAuthClient;
     try {
         let authConfig = {
             scopes: ['https://www.googleapis.com/auth/spreadsheets'],
@@ -22,7 +24,6 @@ async function getAuth() {
         if (process.env.GOOGLE_SERVICE_ACCOUNT) {
             try {
                 authConfig.credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
-                console.log("Using credentials from GOOGLE_SERVICE_ACCOUNT env var.");
             } catch (e) {
                 console.error("Failed to parse GOOGLE_SERVICE_ACCOUNT env var:", e);
             }
@@ -32,7 +33,9 @@ async function getAuth() {
         }
 
         const auth = new google.auth.GoogleAuth(authConfig);
-        return await auth.getClient();
+        cachedAuthClient = await auth.getClient();
+        console.log("Google Auth Client initialized and cached.");
+        return cachedAuthClient;
     } catch (e) {
         console.error("Failed to initialize Google Auth:", e);
         return null;

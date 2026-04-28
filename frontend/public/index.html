@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Branded Vehicle Report — Zypp</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 
 <style>
 :root {
@@ -298,6 +301,7 @@ td.save-err .vt{animation:flashR .6s;}
 .orb2{width:260px;height:260px;background:rgba(124,111,255,.07);bottom:-60px;right:-60px;animation-delay:-3s;}
 .orb3{width:180px;height:180px;background:rgba(0,229,160,.05);bottom:30%;left:20%;animation-delay:-5s;}
 @keyframes float{0%{transform:translate(0,0);}100%{transform:translate(20px,20px);}}
+.scooter-marker svg { filter: drop-shadow(0 0 4px rgba(0,0,0,0.8)); }
 </style>
 </head>
 <body>
@@ -400,6 +404,7 @@ td.save-err .vt{animation:flashR .6s;}
       <button class="tab" onclick="switchTab('helmet',this)">🪖 Helmet</button>
       <button class="tab" onclick="switchTab('user',this)">👤 User Data</button>
       <button class="tab" onclick="switchTab('summary',this)">📊 Summary</button>
+      <button class="tab" onclick="switchTab('heatmap',this)">🔥 Heatmap</button>
     </div>
 
     <div class="search-wrap" style="flex: 1; max-width: 400px; min-width: 250px;">
@@ -450,6 +455,24 @@ const FIELD_DEFS = [
 
 // ─── STATE ────────────────────────────────────────────────────────────
 let connected = false;
+let BASE_URL = ''; // Detect backend later if needed
+
+async function apiFetch(endpoint, opts = {}) {
+  // If opened as a local file, default to the local node server port
+  const base = (window.location.protocol === 'file:') ? 'http://localhost:3002' : '';
+  const url = (endpoint.startsWith('http')) ? endpoint : base + endpoint;
+  
+  try {
+    const res = await fetch(url, opts);
+    return res;
+  } catch (e) {
+    // Semi-intelligent fallback for local dev
+    if (!base && !endpoint.startsWith('http')) {
+      try { return await fetch('http://localhost:3002' + endpoint, opts); } catch(e2) { throw e; }
+    }
+    throw e;
+  }
+}
 const store   = {
   data:{'3w':[],'2w':[],'helmet':[],'user':[]}, 
   colMap:{'3w':{},'2w':{},'helmet':{},'user':{}}, 
@@ -551,6 +574,27 @@ function buildPanels(){
     <tbody id="expiryTbody"></tbody></table>
   </div>`;
   wrap.appendChild(sum);
+
+  // Heatmap panel
+  const heat = document.createElement('div');
+  heat.className = 'tab-panel'; heat.id = 'panel-heatmap';
+  heat.innerHTML = `
+    <div class="table-wrap">
+      <div class="table-hbar">
+        <h3>🔥 Rider Heatmap — Live Track</h3>
+        <div class="tright"><span class="tsnote" id="tn-heatmap"></span></div>
+      </div>
+      <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); border-bottom: 1px solid var(--border); border-top: none;">
+        <div class="fg"><label>City</label><input type="text" id="hCity" value="Gurgaon"></div>
+        <div class="fg"><label>Start Date</label><input type="date" id="hStart" value="2026-04-14"></div>
+        <div class="fg"><label>End Date</label><input type="date" id="hEnd" value="2026-04-21"></div>
+        <button class="btn-add" style="margin-top: 0; height: 38px;" onclick="loadHeatmapData()">Apply Filters</button>
+      </div>
+      <div style="padding: 18px;">
+        <div id="map" style="height: 600px; width: 100%; border-radius: 12px; border: 1px solid var(--border); z-index: 1;"></div>
+      </div>
+    </div>`;
+  wrap.appendChild(heat);
 }
 
 // ─── RENDER TABLE ─────────────────────────────────────────────────────
@@ -771,8 +815,92 @@ function switchTab(type,btn){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('panel-'+type).classList.add('active');
+  const panel = document.getElementById('panel-'+type);
+  panel.classList.add('active');
+  
   if(type==='summary') updateSummary();
+  if(type==='heatmap') {
+    if(!map) initMap();
+    else setTimeout(() => map.invalidateSize(), 100);
+  }
+}
+
+// ─── HEATMAP LOGIC ──────────────────────────────────────────────────
+let map, heatLayer, markerLayer;
+const scooterIcon = L.divIcon({
+  html: `<svg viewBox="0 0 24 24" width="28" height="28" fill="var(--green)" xmlns="http://www.w3.org/2000/svg">
+          <path d="M19.5,18c-1.4,0-2.5,1.1-2.5,2.5s1.1,2.5,2.5,2.5s2.5-1.1,2.5-2.5S20.9,18,19.5,18z M19.5,22c-0.8,0-1.5-0.7-1.5-1.5 s0.7-1.5,1.5-1.5s1.5,0.7,1.5,1.5S20.3,22,19.5,22z M7,15.5l2-1.3l1.3-3.2L8,6l3-3h3l1,3h3l1,7h-2.5l-0.5-4H14l-1-3h-1l2,5l-1.5,3.8 l-2.5,1.7V22H7v-2.5l3-2h-3C5.6,17.5,4.5,18.6,4.5,20s1.1,2.5,2.5,2.5s2.5-1.1,2.5-2.5h2c0,1.4,1.1,2.5,2.5,2.5s2.5-1.1,2.5-2.5 s-1.1-2.5-2.5-2.5h-1l1-3.5h2.5c1.4,0,2.5-1.1,2.5-2.5V11l-1.5-7.5L14,2h-4L6,6l2,5.5L7,15.5V15.5z"/>
+        </svg>`,
+  className: 'scooter-marker',
+  iconSize: [28, 28],
+  iconAnchor: [14, 28]
+});
+
+function initMap(){
+  map = L.map('map').setView([28.4595, 77.0266], 12);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20
+  }).addTo(map);
+  markerLayer = L.layerGroup().addTo(map);
+  loadHeatmapData();
+}
+
+async function loadHeatmapData(){
+  const msgEl = document.getElementById('tn-heatmap');
+  const city = document.getElementById('hCity')?.value || 'Gurgaon';
+  const start = document.getElementById('hStart')?.value; 
+  const end = document.getElementById('hEnd')?.value;
+
+  // Format date from YYYY-MM-DD to DD-MM-YYYY
+  const fmt = (iso) => iso ? iso.split('-').reverse().join('-') : '';
+  const sDate = fmt(start) || '14-04-2026';
+  const eDate = fmt(end) || '21-04-2026';
+
+  if(msgEl) msgEl.textContent = '⟳ Loading heatmap data...';
+  try {
+    const url = `https://data.bcykal.com/tracker/riders_map?city=${encodeURIComponent(city)}&start_date=${sDate}&end_date=${eDate}`;
+    const res = await apiFetch(url);
+    const data = await res.json();
+    if(!data || !data.length) {
+      if(msgEl) msgEl.textContent = '⚠ No data received for this selection';
+      if(heatLayer) map.removeLayer(heatLayer);
+      markerLayer.clearLayers();
+      return;
+    }
+    
+    const heatPoints = data.map(pt => [pt.lat, pt.lng, 0.5]);
+    if(heatLayer) map.removeLayer(heatLayer);
+    heatLayer = L.heatLayer(heatPoints, {
+      radius: 25,
+      blur: 15,
+      maxZoom: 17,
+      gradient: {0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1: 'red'}
+    }).addTo(map);
+    
+    markerLayer.clearLayers();
+    const markers = [];
+    data.forEach(pt => {
+      const m = L.marker([pt.lat, pt.lng], { icon: scooterIcon });
+      m.bindTooltip(`<strong>EB No:</strong> ${pt.qrCode || 'N/A'}<br><strong>Date:</strong> ${new Date(pt.Date).toLocaleDateString()}`, {
+        direction: 'top',
+        offset: [0, -25]
+      });
+      m.addTo(markerLayer);
+      markers.push([pt.lat, pt.lng]);
+    });
+    
+    // Auto-center map to fit markers
+    if(markers.length > 0) {
+      map.fitBounds(L.latLngBounds(markers), { padding: [50, 50], maxZoom: 15 });
+    }
+    
+    if(msgEl) msgEl.textContent = `✓ ${data.length} points loaded`;
+  } catch(e) {
+    console.error('Heatmap load failed:', e);
+    if(msgEl) msgEl.textContent = '⚠ Load failed';
+  }
 }
 
 // ─── BACKEND CONFIG ───────────────────────────────────────────────────
@@ -781,11 +909,11 @@ function closeSetup(){document.getElementById('setupModal').classList.add('hidde
 async function checkBackend(){
   setSS('loading','Connecting to Node.js Backend…');
   try {
-    const res = await fetch('/api/config');
+    const res = await apiFetch('/api/config');
     const data = await res.json();
     if(data.configured) {
         // Fetch SpreadSheet ID from backend
-        const cRes = await fetch('/api/config/client');
+        const cRes = await apiFetch('/api/config/client');
         const cData = await cRes.json();
         const sid = cData.spreadsheetId;
         SHEET_IDS = { '3w':sid, '2w':sid, 'helmet':sid, 'user':sid };
@@ -812,7 +940,7 @@ async function loadAll(){
   let ok=true;
   for(const type of TYPES){
     try{
-      const res=await fetch(`/api/sheets/read?spreadsheetId=${SHEET_IDS[type]}&range=${SHEET_TABS[type]}`);
+      const res=await apiFetch(`/api/sheets/read?spreadsheetId=${SHEET_IDS[type]}&range=${SHEET_TABS[type]}`);
       const data=await res.json();
       if(data.error) throw new Error(data.error);
       const rows=data.values||[];
@@ -885,7 +1013,7 @@ async function writeCell(type,record,field,val){
   const ci=store.colMap[type][field]; if(ci===undefined)return false;
   const letter=colLetter(ci), shRow=record._rowIdx+1;
   try{
-    const res=await fetch('/api/sheets/update', {
+    const res=await apiFetch('/api/sheets/update', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({spreadsheetId:SHEET_IDS[type], range:`${SHEET_TABS[type]}!${letter}${shRow}`, value:val})
     });
@@ -905,7 +1033,7 @@ async function appendRow(type,row){
   const arr=new Array(maxIdx+1).fill('');
   Object.entries(store.colMap[type]).forEach(([k,i])=>{ if(row[k]!==undefined)arr[i]=row[k]; });
   try{
-    const res=await fetch('/api/sheets/append', {
+    const res=await apiFetch('/api/sheets/append', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({spreadsheetId:SHEET_IDS[type], range:`${SHEET_TABS[type]}!A1`, values:arr})
     });
