@@ -93,6 +93,61 @@ app.post('/api/upload/imgbb', upload.single('image'), async (req, res) => {
     }
 });
 
+// MongoDB schema and model for storing images directly as binary buffers
+const ImageSchema = new mongoose.Schema({
+    data: Buffer,
+    contentType: String
+});
+const ImageModel = mongoose.models.Image || mongoose.model('Image', ImageSchema);
+
+// Upload directly to MongoDB
+app.post('/api/upload/mongodb', upload.single('image'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    try {
+        const fs = require('fs');
+        const filePath = req.file.path;
+        
+        const img = new ImageModel({
+            data: fs.readFileSync(filePath),
+            contentType: req.file.mimetype
+        });
+        await img.save();
+        
+        // Clean up local file after saving to DB
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+        
+        // Return public URL that streams this image from MongoDB
+        const host = req.get('host');
+        const protocol = (host.includes('localhost') || host.includes('127.0.0.1')) ? 'http' : 'https';
+        const imageUrl = `${protocol}://${host}/api/images/${img._id}`;
+        
+        res.json({ success: true, url: imageUrl });
+    } catch (e) {
+        console.error("MongoDB image upload failed:", e.message);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Serve image from MongoDB
+app.get('/api/images/:id', async (req, res) => {
+    try {
+        const img = await ImageModel.findById(req.params.id);
+        if (!img) {
+            return res.status(404).send('Image not found');
+        }
+        res.set('Content-Type', img.contentType);
+        res.send(img.data);
+    } catch (e) {
+        console.error("Failed to serve image from MongoDB:", e.message);
+        res.status(500).send('Server error');
+    }
+});
+
 // Configure standard Google APIs Auth Client
 let cachedAuthClient = null;
 async function getAuth() {

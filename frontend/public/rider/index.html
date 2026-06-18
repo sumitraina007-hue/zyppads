@@ -458,8 +458,8 @@
             }
         }
 
-        // Upload to Local Server proxying to ImgBB
-        async function uploadImageToImgBB(file) {
+        // Upload to Local Server proxying to MongoDB
+        async function uploadImageToMongoDB(file) {
             try {
                 // Compress image before upload to save bandwidth & time
                 const options = {
@@ -475,8 +475,8 @@
                 
                 const base = (window.location.hostname === 'localhost' || window.location.protocol === 'file:') ? 'http://localhost:3002' : '';
                 
-                // Upload via backend proxy to ImgBB
-                const res = await fetch(base + '/api/upload/imgbb', {
+                // Upload via backend proxy to MongoDB
+                const res = await fetch(base + '/api/upload/mongodb', {
                     method: 'POST',
                     body: formData
                 });
@@ -515,8 +515,8 @@
             showStatus('Uploading photos and preparing data. Please wait...', 'success');
 
             try {
-                // 1. Upload Images to ImgBB concurrently
-                const uploadPromises = photos.map(p => uploadImageToImgBB(fileStore[p.id]));
+                // 1. Upload Images to MongoDB concurrently
+                const uploadPromises = photos.map(p => uploadImageToMongoDB(fileStore[p.id]));
                 const uploadedUrls = await Promise.all(uploadPromises);
 
                 btn.querySelector('span').textContent = 'Saving to Database...';
