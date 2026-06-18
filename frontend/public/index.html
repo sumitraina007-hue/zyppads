@@ -148,11 +148,17 @@ td.save-err .vt{animation:flashR .6s;}
 
 .form-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:16px 18px;background:var(--surface);border-top:1px solid var(--border);}
 .fg label{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;font-family:'JetBrains Mono',monospace;}
-.fg input,.fg select{width:100%;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;}
+.fg input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:8px 10px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;color-scheme: dark;}
+.fg select{width:100%;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:8px 28px 8px 10px;color:var(--text);font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;color-scheme: dark;appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml;utf8,<svg fill='%236b7fa3' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>"); background-repeat: no-repeat; background-position: calc(100% - 10px) center;}
 .fg input:focus,.fg select:focus{border-color:var(--accent);}
 .fg select option{background:var(--card);}
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) !important;
+    cursor: pointer;
+}
 .btn-add{background:var(--accent);color:#0a0f1e;border:none;padding:9px 20px;border-radius:7px;font-weight:700;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s;align-self:flex-end;}
 .btn-add:hover{opacity:.85;}
+.btn-add:disabled{opacity:.4;cursor:not-allowed;}
 
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
@@ -302,6 +308,12 @@ td.save-err .vt{animation:flashR .6s;}
 .orb3{width:180px;height:180px;background:rgba(0,229,160,.05);bottom:30%;left:20%;animation-delay:-5s;}
 @keyframes float{0%{transform:translate(0,0);}100%{transform:translate(20px,20px);}}
 .scooter-marker svg { filter: drop-shadow(0 0 4px rgba(0,0,0,0.8)); }
+.tab svg {
+    width: 17px !important;
+    height: 17px !important;
+    vertical-align: -3.5px !important;
+    margin-right: 6px !important;
+}
 </style>
 </head>
 <body>
@@ -399,10 +411,17 @@ td.save-err .vt{animation:flashR .6s;}
 
   <div class="nav-row" style="display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 22px; flex-wrap: wrap;">
     <div class="tab-bar" style="margin-bottom: 0;">
-      <button class="tab active" onclick="switchTab('3w',this)">🛺 3‑Wheeler</button>
-      <button class="tab" onclick="switchTab('2w',this)">🛵 2‑Wheeler</button>
-      <button class="tab" onclick="switchTab('helmet',this)">🪖 Helmet</button>
+      <button class="tab active" onclick="switchTab('3w',this)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="vertical-align:-2px; margin-right:4px;"><path fill-rule="evenodd" clip-rule="evenodd" d="M3 16.5c0-.83.67-1.5 1.5-1.5S6 15.67 6 16.5H18c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5H22v-3.5c0-1.1-.9-2-2-2h-3V7c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v4H3c-1.1 0-2 .9-2 2v3.5h2zm5-9.5h7v3H8V7zm0 4.5h4V15H8v-3.5z M6 19c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2zm14 0c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z"/></svg> 3-Wheeler
+      </button>
+      <button class="tab" onclick="switchTab('2w',this)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="vertical-align:-2px; margin-right:4px;"><path d="M19.5 9.5c.83 0 1.5-.67 1.5-1.5S20.33 6.5 19.5 6.5 18 7.17 18 8s.67 1.5 1.5 1.5zM6 19c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm12 0c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-6-8.5c.83 0 1.5-.67 1.5-1.5S12.83 7.5 12 7.5s-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm6.5 1.5H19c.55 0 1-.45 1-1s-.45-1-1-1h-6.27l-2.3-4.6c-.23-.46-.7-.75-1.21-.75H4c-.55 0-1 .45-1 1s.45 1 1 1h4.73l1.8 3.6-2.58 5.15C7.23 15.26 6.63 15 6 15c-1.31 0-2.42.85-2.83 2H2v-6c0-1.1.9-2 2-2h4l2 4h4.5l1.5-3z"/></svg> 2-Wheeler
+      </button>
+      <button class="tab" onclick="switchTab('helmet',this)">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="vertical-align:-2px; margin-right:4px;"><path fill-rule="evenodd" clip-rule="evenodd" d="M4 14c0-7 5-11 10-11s8 2 8 6c0 4-3 6-8 6c-3 0-6 2-6 2v-3zm6-8c3 0 6 1 6.5 4c-1.5-1-4.5-1.5-7.5-1l1-3z"/></svg> Helmet
+      </button>
       <button class="tab" onclick="switchTab('user',this)">👤 User Data</button>
+      <button class="tab" onclick="switchTab('branding',this)">📸 Branding Data</button>
       <button class="tab" onclick="switchTab('summary',this)">📊 Summary</button>
       <button class="tab" onclick="switchTab('heatmap',this)">🔥 Heatmap</button>
     </div>
@@ -427,11 +446,16 @@ td.save-err .vt{animation:flashR .6s;}
 
 <script>
 // ─── CONFIG ───────────────────────────────────────────────────────────
+// SVG constants for asset icons to ensure visual clarity
+const SVG_3W = `<svg class="tab-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px; margin-right:6px;"><path fill-rule="evenodd" clip-rule="evenodd" d="M3 16.5c0-.83.67-1.5 1.5-1.5S6 15.67 6 16.5H18c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5H22v-3.5c0-1.1-.9-2-2-2h-3V7c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v4H3c-1.1 0-2 .9-2 2v3.5h2zm5-9.5h7v3H8V7zm0 4.5h4V15H8v-3.5z M6 19c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2zm14 0c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2z"/></svg>`;
+const SVG_2W = `<svg class="tab-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px; margin-right:6px;"><path d="M19.5 9.5c.83 0 1.5-.67 1.5-1.5S20.33 6.5 19.5 6.5 18 7.17 18 8s.67 1.5 1.5 1.5zM6 19c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm12 0c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-6-8.5c.83 0 1.5-.67 1.5-1.5S12.83 7.5 12 7.5s-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm6.5 1.5H19c.55 0 1-.45 1-1s-.45-1-1-1h-6.27l-2.3-4.6c-.23-.46-.7-.75-1.21-.75H4c-.55 0-1 .45-1 1s.45 1 1 1h4.73l1.8 3.6-2.58 5.15C7.23 15.26 6.63 15 6 15c-1.31 0-2.42.85-2.83 2H2v-6c0-1.1.9-2 2-2h4l2 4h4.5l1.5-3z"/></svg>`;
+const SVG_HELMET = `<svg class="tab-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="vertical-align:-2px; margin-right:6px;"><path fill-rule="evenodd" clip-rule="evenodd" d="M4 14c0-7 5-11 10-11s8 2 8 6c0 4-3 6-8 6c-3 0-6 2-6 2v-3zm6-8c3 0 6 1 6.5 4c-1.5-1-4.5-1.5-7.5-1l1-3z"/></svg>`;
+
 let SHEET_IDS = {};
-const SHEET_TABS = {'3w':'3 Wheeler', '2w':'2 Wheeler', 'helmet':'helmet', 'user':'In - App'};
-const TYPES = ['3w','2w','helmet','user'];
-const TYPE_LABELS = {'3w':'🛺 3-Wheeler','2w':'🛵 2-Wheeler','helmet':'🪖 Helmet','user':'👤 User Data'};
-const TYPE_ICONS  = {'3w':'🛺','2w':'🛵','helmet':'🪖','user':'👤'};
+const SHEET_TABS = {'3w':'3 Wheeler', '2w':'2 Wheeler', 'helmet':'helmet', 'user':'In - App', 'branding':'Branding Data'};
+const TYPES = ['3w','2w','helmet','user','branding'];
+const TYPE_LABELS = {'3w':'3-Wheeler','2w':'2-Wheeler','helmet':'Helmet','user':'User Data', 'branding':'Branding Data'};
+const TYPE_ICONS  = {'3w': SVG_3W, '2w': SVG_2W, 'helmet': SVG_HELMET, 'user': '👤', 'branding': '📸'};
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 const PAGE_SIZE = 25;
 
@@ -450,6 +474,11 @@ const FIELD_DEFS = [
   {key:'ecpm',   label:'eCPM ($)',       kw:['ecpm','ecpm ($)']},
   {key:'view',   label:'Viewability',    kw:['viewability','viewability (%)']},
   {key:'revINR', label:'Total Rev (₹)',  kw:['total revenue in rs','revenue in rs','inr','total rev']},
+  {key:'riderId', label:'Rider ID',      kw:['rider id', 'id', 'rider_id']},
+  {key:'pBack',   label:'Back Photo',    kw:['back photo', 'back']},
+  {key:'pRear',   label:'Rear Photo',    kw:['rear photo', 'rear']},
+  {key:'pOpp',    label:'Opposite Photo',kw:['opposite photo', 'opposite']},
+  {key:'pFront',  label:'Front Photo',   kw:['front photo', 'front']},
   {key:'SKIP',   label:'— Skip —',       kw:[]},
 ];
 
@@ -458,15 +487,17 @@ let connected = false;
 let BASE_URL = ''; // Detect backend later if needed
 
 async function apiFetch(endpoint, opts = {}) {
-  // If opened as a local file, default to the local node server port
-  const base = (window.location.protocol === 'file:') ? 'http://localhost:3002' : '';
+  const base = (window.location.protocol === 'file:') 
+    ? 'http://localhost:3002' 
+    : (window.location.port === '3002' || window.location.hostname === 'localhost') 
+      ? '' 
+      : 'http://localhost:3002';
   const url = (endpoint.startsWith('http')) ? endpoint : base + endpoint;
   
   try {
     const res = await fetch(url, opts);
     return res;
   } catch (e) {
-    // Semi-intelligent fallback for local dev
     if (!base && !endpoint.startsWith('http')) {
       try { return await fetch('http://localhost:3002' + endpoint, opts); } catch(e2) { throw e; }
     }
@@ -474,10 +505,10 @@ async function apiFetch(endpoint, opts = {}) {
   }
 }
 const store   = {
-  data:{'3w':[],'2w':[],'helmet':[],'user':[]}, 
-  colMap:{'3w':{},'2w':{},'helmet':{},'user':{}}, 
-  headers:{'3w':[],'2w':[],'helmet':[],'user':[]},
-  currentPage:{'3w':1,'2w':1,'helmet':1,'user':1},
+  data:{'3w':[],'2w':[],'helmet':[],'user':[],'branding':[]}, 
+  colMap:{'3w':{},'2w':{},'helmet':{},'user':{},'branding':{}}, 
+  headers:{'3w':[],'2w':[],'helmet':[],'user':[],'branding':[]},
+  currentPage:{'3w':1,'2w':1,'helmet':1,'user':1,'branding':1},
   searchTerm:''
 };
 let mapperType = '3w';
@@ -536,6 +567,10 @@ function buildPanels(){
         <tr>
           <th>#</th><th>Date</th><th class="ec">Impressions</th><th class="ec">Revenue ($)</th>
           <th class="ec">eCPM ($)</th><th class="ec">Viewability (%)</th><th class="ec">Total Revenue (₹)</th>
+        </tr>` : type==='branding' ? `
+        <tr>
+          <th>#</th><th>Date</th><th>Rider Name</th><th>Rider ID</th><th>Vehicle Reg</th>
+          <th>Back Photo</th><th>Rear Photo</th><th>Opposite Photo</th><th>Front Photo</th>
         </tr>` : `
         <tr>
           <th>#</th><th>Vehicle / ID</th><th>Driver / Rider</th><th>City / Hub</th><th>Brand</th>
@@ -585,16 +620,51 @@ function buildPanels(){
         <div class="tright"><span class="tsnote" id="tn-heatmap"></span></div>
       </div>
       <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); border-bottom: 1px solid var(--border); border-top: none;">
-        <div class="fg"><label>City</label><input type="text" id="hCity" value="Gurgaon"></div>
-        <div class="fg"><label>Start Date</label><input type="date" id="hStart" value="2026-04-14"></div>
-        <div class="fg"><label>End Date</label><input type="date" id="hEnd" value="2026-04-21"></div>
-        <button class="btn-add" style="margin-top: 0; height: 38px;" onclick="loadHeatmapData()">Apply Filters</button>
+        <div class="fg">
+          <label>City</label>
+          <select id="hCity" style="width: 100%; display: block; height: 38px;">
+            <option value="Gurgaon">Gurgaon</option>
+            <option value="Delhi">Delhi</option>
+            <option value="Noida">Noida</option>
+            <option value="Ghaziabad">Ghaziabad</option>
+            <option value="Faridabad">Faridabad</option>
+            <option value="Bengaluru">Bengaluru</option>
+            <option value="Mumbai">Mumbai</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Asset Type</label>
+          <select id="hAsset" style="width: 100%; display: block; height: 38px;">
+            <option value="all">All Assets</option>
+            <option value="3w">🛺 3-Wheeler</option>
+            <option value="2w">🛵 2-Wheeler</option>
+            <option value="helmet">🪖 Helmet</option>
+          </select>
+        </div>
+        <div class="fg"><label>Start Date</label><input type="date" id="hStart"></div>
+        <div class="fg"><label>Tenure End</label><input type="date" id="hEnd"></div>
+        <button class="btn-add" id="hApplyBtn" style="margin-top: 0; height: 38px;" onclick="loadHeatmapData()">Apply Filters</button>
       </div>
       <div style="padding: 18px;">
         <div id="map" style="height: 600px; width: 100%; border-radius: 12px; border: 1px solid var(--border); z-index: 1;"></div>
       </div>
     </div>`;
   wrap.appendChild(heat);
+
+  // Lightbox Modal for Photo View
+  const lb = document.createElement('div');
+  lb.className = 'modal-overlay hidden';
+  lb.id = 'lightboxModal';
+  lb.style.zIndex = '10000';
+  lb.onclick = function(e) { if(e.target === lb) closeLightbox(); };
+  lb.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:90%; width:auto; padding:20px; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;">
+      <button class="modal-close" onclick="closeLightbox()">✕</button>
+      <img id="lightboxImg" src="" style="max-width:100%; max-height:80vh; border-radius:8px; border:1px solid var(--border); object-fit:contain;">
+      <div id="lightboxCaption" style="margin-top:12px; font-size:14px; font-weight:600; color:var(--text); font-family:'Inter',sans-serif;"></div>
+    </div>
+  `;
+  wrap.appendChild(lb);
 }
 
 // ─── RENDER TABLE ─────────────────────────────────────────────────────
@@ -673,6 +743,18 @@ function renderTable(type){
         <td class="mono">${r.ecpm||'—'}</td>
         <td class="mono">${r.view||'—'}</td>
         <td class="mono rp">${fmtINR(r.revINR)}</td>`;
+    } else if (type==='branding') {
+      tr.innerHTML=`
+        <td class="mono">${actualIdx+1}</td>
+        <td class="mono muted">${r.date||'—'}</td>
+        <td>${r.driver||'—'}</td>
+        <td class="mono">${r.riderId||'—'}</td>
+        <td><strong>${r.veh||'—'}</strong></td>
+        <td>${r.pBack ? `<a href="javascript:void(0)" onclick="openLightbox('${r.pBack}', 'Back Photo - ${r.driver || ''}')" style="color:var(--accent)">View</a>` : '—'}</td>
+        <td>${r.pRear ? `<a href="javascript:void(0)" onclick="openLightbox('${r.pRear}', 'Rear Photo - ${r.driver || ''}')" style="color:var(--accent)">View</a>` : '—'}</td>
+        <td>${r.pOpp ? `<a href="javascript:void(0)" onclick="openLightbox('${r.pOpp}', 'Opposite Photo - ${r.driver || ''}')" style="color:var(--accent)">View</a>` : '—'}</td>
+        <td>${r.pFront ? `<a href="javascript:void(0)" onclick="openLightbox('${r.pFront}', 'Front Photo - ${r.driver || ''}')" style="color:var(--accent)">View</a>` : '—'}</td>
+      `;
     } else {
       const st=status(r.date,r.tenure,r.tenureEnd);
       tr.innerHTML=`
@@ -749,12 +831,12 @@ function updateKPIs(){
   let tot=0,cost=0,rev=0,active=0;
   TYPES.forEach(t=>{
     store.data[t].forEach(r=>{
-      if(t !== 'user') {
+      if(t !== 'user' && t !== 'branding') {
         tot++;
         if(status(r.date,r.tenure,r.tenureEnd).cls!=='expired') active++;
         cost += r.cost||0;
         rev += r.rev||0;
-      } else {
+      } else if (t === 'user') {
         // For User/In-App, we only add the INR revenue to the total
         rev += r.revINR||0;
       }
@@ -781,6 +863,7 @@ function updateSummary(){
   const sBody=document.getElementById('sumTbody'); if(!sBody)return;
   sBody.innerHTML='';
   TYPES.forEach(t=>{
+    if (t === 'branding') return;
     const s=stats[t],tr=document.createElement('tr');
     tr.innerHTML=`<td>${TYPE_LABELS[t]}</td><td class="mono">${s.cnt}</td>
       <td><span class="status active">${s.act}</span></td>
@@ -790,6 +873,7 @@ function updateSummary(){
     sBody.appendChild(tr);
   });
   TYPES.forEach(t=>{
+    if (t === 'branding') return;
     const s=stats[t], sc=maxV>0?v=>Math.round(v/maxV*100):()=>0;
     document.getElementById('bc-'+t).style.width=sc(s.cost)+'%';
     document.getElementById('bcl-'+t).textContent=fmtINR(s.cost);
@@ -798,8 +882,10 @@ function updateSummary(){
   });
   const eBody=document.getElementById('expiryTbody'); if(!eBody)return;
   eBody.innerHTML=''; let found=false;
-  TYPES.forEach(t=>store.data[t].forEach(r=>{
-    const st=status(r.date,r.tenure);
+  TYPES.forEach(t=>{
+    if(t==='branding') return;
+    store.data[t].forEach(r=>{
+    const st=status(r.date,r.tenure,r.tenureEnd);
     if(st.d>=0&&st.d<=30){found=true;const tr=document.createElement('tr');
       tr.innerHTML=`<td>${TYPE_LABELS[t]}</td><td><strong>${r.veh}</strong></td><td>${r.driver}</td>
         <td>${r.brand}</td><td class="muted">${r.city}</td><td class="mono">${fmtD(st.e)}</td>
@@ -807,7 +893,8 @@ function updateSummary(){
         <td class="mono rp">${fmtINR(r.rev)}</td>`;
       eBody.appendChild(tr);
     }
-  }));
+    });
+  });
   if(!found) eBody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted);">No contracts expiring in the next 30 days</td></tr>';
 }
 
@@ -828,9 +915,11 @@ function switchTab(type,btn){
 // ─── HEATMAP LOGIC ──────────────────────────────────────────────────
 let map, heatLayer, markerLayer;
 const scooterIcon = L.divIcon({
-  html: `<svg viewBox="0 0 24 24" width="28" height="28" fill="var(--green)" xmlns="http://www.w3.org/2000/svg">
-          <path d="M19.5,18c-1.4,0-2.5,1.1-2.5,2.5s1.1,2.5,2.5,2.5s2.5-1.1,2.5-2.5S20.9,18,19.5,18z M19.5,22c-0.8,0-1.5-0.7-1.5-1.5 s0.7-1.5,1.5-1.5s1.5,0.7,1.5,1.5S20.3,22,19.5,22z M7,15.5l2-1.3l1.3-3.2L8,6l3-3h3l1,3h3l1,7h-2.5l-0.5-4H14l-1-3h-1l2,5l-1.5,3.8 l-2.5,1.7V22H7v-2.5l3-2h-3C5.6,17.5,4.5,18.6,4.5,20s1.1,2.5,2.5,2.5s2.5-1.1,2.5-2.5h2c0,1.4,1.1,2.5,2.5,2.5s2.5-1.1,2.5-2.5 s-1.1-2.5-2.5-2.5h-1l1-3.5h2.5c1.4,0,2.5-1.1,2.5-2.5V11l-1.5-7.5L14,2h-4L6,6l2,5.5L7,15.5V15.5z"/>
-        </svg>`,
+  html: `<div style="display:flex; align-items:center; justify-content:center; width:28px; height:28px; overflow:visible;">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="#00e5a0" style="filter: drop-shadow(0 0 4px rgba(0,0,0,0.8));" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19.5,18c-1.4,0-2.5,1.1-2.5,2.5s1.1,2.5,2.5,2.5s2.5-1.1,2.5-2.5S20.9,18,19.5,18z M19.5,22c-0.8,0-1.5-0.7-1.5-1.5 s0.7-1.5,1.5-1.5s1.5,0.7,1.5,1.5S20.3,22,19.5,22z M7,15.5l2-1.3l1.3-3.2L8,6l3-3h3l1,3h3l1,7h-2.5l-0.5-4H14l-1-3h-1l2,5l-1.5,3.8 l-2.5,1.7V22H7v-2.5l3-2h-3C5.6,17.5,4.5,18.6,4.5,20s1.1,2.5,2.5,2.5s2.5-1.1,2.5-2.5h2c0,1.4,1.1,2.5,2.5,2.5s2.5-1.1,2.5-2.5 s-1.1-2.5-2.5-2.5h-1l1-3.5h2.5c1.4,0,2.5-1.1,2.5-2.5V11l-1.5-7.5L14,2h-4L6,6l2,5.5L7,15.5V15.5z"/>
+          </svg>
+         </div>`,
   className: 'scooter-marker',
   iconSize: [28, 28],
   iconAnchor: [14, 28]
@@ -846,23 +935,57 @@ function initMap(){
   markerLayer = L.layerGroup().addTo(map);
   loadHeatmapData();
 }
-
 async function loadHeatmapData(){
   const msgEl = document.getElementById('tn-heatmap');
   const city = document.getElementById('hCity')?.value || 'Gurgaon';
-  const start = document.getElementById('hStart')?.value; 
-  const end = document.getElementById('hEnd')?.value;
+
+  // Handle initial dynamic dates (last 30 days and current date)
+  const today = new Date();
+  const prior30 = new Date();
+  prior30.setDate(today.getDate() - 30);
+
+  const toISODate = (d) => d.toISOString().split('T')[0];
+
+  const startInput = document.getElementById('hStart');
+  const endInput = document.getElementById('hEnd');
+
+
+  if (startInput && !startInput.value) {
+    startInput.value = toISODate(prior30);
+  }
+  if (endInput && !endInput.value) {
+    endInput.value = toISODate(today);
+  }
+
+  const startVal = startInput?.value;
+  const endVal = endInput?.value;
+  const assetType = document.getElementById('hAsset')?.value || 'all';
 
   // Format date from YYYY-MM-DD to DD-MM-YYYY
   const fmt = (iso) => iso ? iso.split('-').reverse().join('-') : '';
-  const sDate = fmt(start) || '14-04-2026';
-  const eDate = fmt(end) || '21-04-2026';
+  const sDate = fmt(startVal);
+  const eDate = fmt(endVal);
+
+  const btnEl = document.getElementById('hApplyBtn');
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.textContent = 'Loading...';
+  }
 
   if(msgEl) msgEl.textContent = '⟳ Loading heatmap data...';
   try {
-    const url = `https://data.bcykal.com/tracker/riders_map?city=${encodeURIComponent(city)}&start_date=${sDate}&end_date=${eDate}`;
+    const url = `/api/tracker/riders_map?city=${encodeURIComponent(city)}&start_date=${sDate}&end_date=${eDate}`;
     const res = await apiFetch(url);
-    const data = await res.json();
+    let data = await res.json();
+    if (data && data.length) {
+      if (assetType === '3w') {
+        data = data.filter(pt => String(pt.qrCode || '').toUpperCase().startsWith('3W'));
+      } else if (assetType === '2w') {
+        data = data.filter(pt => String(pt.qrCode || '').toUpperCase().startsWith('2W'));
+      } else if (assetType === 'helmet') {
+        data = data.filter(pt => String(pt.qrCode || '').toUpperCase().startsWith('H') && !String(pt.qrCode || '').toUpperCase().startsWith('3W') && !String(pt.qrCode || '').toUpperCase().startsWith('2W'));
+      }
+    }
     if(!data || !data.length) {
       if(msgEl) msgEl.textContent = '⚠ No data received for this selection';
       if(heatLayer) map.removeLayer(heatLayer);
@@ -881,7 +1004,9 @@ async function loadHeatmapData(){
     
     markerLayer.clearLayers();
     const markers = [];
-    data.forEach(pt => {
+    // Only display up to 150 individual interactive markers to avoid DOM lag
+    const markerData = data.slice(0, 150);
+    markerData.forEach(pt => {
       const m = L.marker([pt.lat, pt.lng], { icon: scooterIcon });
       m.bindTooltip(`<strong>EB No:</strong> ${pt.qrCode || 'N/A'}<br><strong>Date:</strong> ${new Date(pt.Date).toLocaleDateString()}`, {
         direction: 'top',
@@ -896,10 +1021,15 @@ async function loadHeatmapData(){
       map.fitBounds(L.latLngBounds(markers), { padding: [50, 50], maxZoom: 15 });
     }
     
-    if(msgEl) msgEl.textContent = `✓ ${data.length} points loaded`;
+    if(msgEl) msgEl.textContent = `✓ ${data.length} points loaded (showing top ${markerData.length} markers)`;
   } catch(e) {
     console.error('Heatmap load failed:', e);
     if(msgEl) msgEl.textContent = '⚠ Load failed';
+  } finally {
+    if (btnEl) {
+      btnEl.disabled = false;
+      btnEl.textContent = 'Apply Filters';
+    }
   }
 }
 
@@ -916,7 +1046,7 @@ async function checkBackend(){
         const cRes = await apiFetch('/api/config/client');
         const cData = await cRes.json();
         const sid = cData.spreadsheetId;
-        SHEET_IDS = { '3w':sid, '2w':sid, 'helmet':sid, 'user':sid };
+        SHEET_IDS = { '3w':sid, '2w':sid, 'helmet':sid, 'user':sid, 'branding':sid };
 
         connected = true;
         setSS('ok', 'Connected to backend.');
@@ -1002,6 +1132,11 @@ function parseSheet(type,rows){
       ecpm:   getV(r,type,'ecpm'),
       view:   getV(r,type,'view'),
       revINR: parseFloat(String(getV(r,type,'revINR')).replace(/[₹,\s]/g,''))||0,
+      riderId: getV(r,type,'riderId'),
+      pBack:  getV(r,type,'pBack'),
+      pRear:  getV(r,type,'pRear'),
+      pOpp:   getV(r,type,'pOpp'),
+      pFront: getV(r,type,'pFront'),
       _rowIdx:i
     });
   }
@@ -1125,6 +1260,28 @@ function toggleEye(){
   if(inp.type==='password'){inp.type='text';eye.textContent='🙈';}
   else{inp.type='password';eye.textContent='👁';}
 }
+
+// ─── LIGHTBOX POPUP FUNCTIONS ─────────────────────────────────────────
+function openLightbox(src, caption) {
+  const modal = document.getElementById('lightboxModal');
+  const img = document.getElementById('lightboxImg');
+  const cap = document.getElementById('lightboxCaption');
+  if (modal && img) {
+    img.src = src;
+    if (cap) cap.textContent = caption || '';
+    modal.classList.remove('hidden');
+  }
+}
+
+function closeLightbox() {
+  const modal = document.getElementById('lightboxModal');
+  const img = document.getElementById('lightboxImg');
+  if (modal) {
+    modal.classList.add('hidden');
+    if (img) img.src = '';
+  }
+}
+
 
 // ─── BOOT ─────────────────────────────────────────────────────────────
 function bootDashboard(){

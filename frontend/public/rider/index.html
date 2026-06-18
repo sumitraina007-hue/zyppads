@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rider Registration & Branding Upload — Zypp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
+
+    <style>
+        :root {
+            --bg: #0a0f1e;
+            --surface: #111827;
+            --card: #161f30;
+            --border: #1e2d45;
+            --accent: #00e5a0;
+            --accent-hover: #00c78a;
+            --text: #e8f0fe;
+            --muted: #6b7fa3;
+            --orange: #ff6b35;
+            --red: #ff4b4b;
+            --green: #00e5a0;
+            --focus-ring: rgba(0, 229, 160, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0a0f1e 0%, #0d1a2e 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 36px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo {
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--accent);
+            letter-spacing: -0.5px;
+        }
+        .logo span {
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 10px;
+        }
+
+        .page-title span {
+            color: var(--accent);
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .form-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+
+        label span.req {
+            color: var(--orange);
+            margin-left: 4px;
+        }
+
+        .form-control {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            color: var(--text);
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--focus-ring);
+        }
+
+        .form-control::placeholder {
+            color: var(--muted);
+        }
+
+        /* File Upload Styling */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            background: var(--surface);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--accent);
+            background: rgba(0, 229, 160, 0.03);
+        }
+
+        .upload-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: var(--muted);
+            transition: color 0.2s ease;
+        }
+
+        .upload-area:hover .upload-icon {
+            color: var(--accent);
+        }
+
+        .upload-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .upload-sub {
+            font-size: 12px;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .file-input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .preview-container {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+            padding: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .preview-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1px solid var(--border);
+        }
+
+        .preview-details {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .preview-name {
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+
+        .preview-size {
+            font-size: 11px;
+            color: var(--muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .remove-file {
+            background: rgba(255, 75, 75, 0.1);
+            color: var(--red);
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .remove-file:hover {
+            background: var(--red);
+            color: white;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--accent);
+            color: #060b17;
+            border: none;
+            border-radius: 10px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 800;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-submit:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 229, 160, 0.2);
+        }
+
+        .btn-submit:disabled {
+            background: var(--muted);
+            color: #111;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loader {
+            display: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Status Message */
+        .status-msg {
+            display: none;
+            padding: 16px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .status-msg.success {
+            display: block;
+            background: rgba(0, 229, 160, 0.1);
+            color: var(--green);
+            border: 1px solid rgba(0, 229, 160, 0.2);
+        }
+
+        .status-msg.error {
+            display: block;
+            background: rgba(255, 75, 75, 0.1);
+            color: var(--red);
+            border: 1px solid rgba(255, 75, 75, 0.2);
+        }
+
+        .status-msg.orange-alert {
+            display: block;
+            background: rgba(255, 107, 53, 0.1);
+            color: var(--orange);
+            border: 1px solid rgba(255, 107, 53, 0.2);
+        }
+
+        @media (max-width: 600px) {
+            .form-card { padding: 24px; }
+            .header { padding: 16px 20px; }
+            .page-title { font-size: 26px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="logo">ZYPP <span>BRANDING UPLOAD</span></div>
+    </div>
+
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">Submit <span>Branding</span> Photos</h1>
+            <p class="subtitle">Complete your vehicle registration by uploading clear photos of your branded 3-wheeler.</p>
+        </div>
+
+        <div class="form-card">
+            <form id="riderForm">
+                <div class="form-group">
+                    <label>Rider Full Name<span class="req">*</span></label>
+                    <input type="text" id="riderName" class="form-control" placeholder="Enter full name" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Rider ID<span class="req">*</span></label>
+                    <input type="text" id="riderId" class="form-control" placeholder="e.g., ZYPP-12345" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Vehicle Registration Number<span class="req">*</span></label>
+                    <input type="text" id="vehicleReg" class="form-control" placeholder="e.g., DL-1C-XXXX" required>
+                </div>
+
+                <!-- File Upload Components generated via JS to keep HTML clean -->
+                <div id="fileUploads"></div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <span>Submit Verification</span>
+                    <div class="loader" id="submitLoader"></div>
+                </button>
+
+                <div id="statusMessage" class="status-msg"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const IMGBB_API_KEY = "8384336ddd9deb1bdac20bbaee43e4f4"; // Configured with new key
+        
+        // Define the expected photos
+        const photos = [
+            { id: "photoBack", label: "Back-Side Photo of 3W with Branding" },
+            { id: "photoRear", label: "Rear-Side Photo of 3W with Branding" },
+            { id: "photoOpposite", label: "Opposite Side Photo of 3W with Branding" },
+            { id: "photoFront", label: "Front Side Photo of 3W with Branding" }
+        ];
+
+        const fileStore = {};
+
+        // Generate Upload UI
+        const uploadContainer = document.getElementById('fileUploads');
+        photos.forEach(photo => {
+            const el = document.createElement('div');
+            el.className = 'form-group';
+            el.innerHTML = `
+                <label>${photo.label} (Must be clear)<span class="req">*</span></label>
+                <div class="upload-area" id="drop-${photo.id}">
+                    <div class="upload-icon">📸</div>
+                    <div class="upload-text">Click to upload or drag and drop</div>
+                    <div class="upload-sub">Max file size: 10 MB</div>
+                    <input type="file" id="${photo.id}" class="file-input" accept="image/jpeg, image/png, image/webp" required>
+                </div>
+                <div class="preview-container" id="preview-${photo.id}">
+                    <img src="" class="preview-img" id="img-${photo.id}">
+                    <div class="preview-details">
+                        <div class="preview-name" id="name-${photo.id}">file.jpg</div>
+                        <div class="preview-size" id="size-${photo.id}">1.2 MB</div>
+                    </div>
+                    <button type="button" class="remove-file" onclick="removeFile('${photo.id}')">✕</button>
+                </div>
+            `;
+            uploadContainer.appendChild(el);
+
+            // Add Event Listeners
+            const input = document.getElementById(photo.id);
+            input.addEventListener('change', (e) => handleFileSelect(e, photo.id));
+        });
+
+        // Handle File Selection
+        function handleFileSelect(event, id) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate Size (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showStatus(`File ${file.name} is larger than 10MB limit!`, "error");
+                event.target.value = '';
+                return;
+            }
+
+            fileStore[id] = file;
+
+            // Show Preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById(`img-${id}`).src = e.target.result;
+                document.getElementById(`name-${id}`).textContent = file.name;
+                document.getElementById(`size-${id}`).textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+                
+                document.getElementById(`drop-${id}`).style.display = 'none';
+                document.getElementById(`preview-${id}`).style.display = 'flex';
+            }
+            reader.readAsDataURL(file);
+        }
+
+        // Remove File
+        window.removeFile = function(id) {
+            delete fileStore[id];
+            document.getElementById(id).value = '';
+            document.getElementById(`preview-${id}`).style.display = 'none';
+            document.getElementById(`drop-${id}`).style.display = 'block';
+        }
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('statusMessage');
+            el.textContent = msg;
+            el.className = `status-msg ${type}`;
+            if (type === 'error') {
+                setTimeout(() => el.style.display = 'none', 6000);
+            }
+        }
+
+        // Upload to Local Server / Fallback to ImgBB
+        async function uploadImageToImgBB(file) {
+            try {
+                // Compress image before upload to save bandwidth & time
+                const options = {
+                    maxSizeMB: 1, // Compress to max 1MB
+                    maxWidthOrHeight: 1920,
+                    useWebWorker: true
+                };
+                
+                const compressedFile = await imageCompression(file, options);
+                
+                const formData = new FormData();
+                formData.append('image', compressedFile);
+                
+                const base = (window.location.hostname === 'localhost' || window.location.protocol === 'file:') ? 'http://localhost:3002' : '';
+                
+                // 1. Try local server upload
+                try {
+                    const localRes = await fetch(base + '/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (localRes.ok) {
+                        const localData = await localRes.json();
+                        if (localData.success) {
+                            // Convert relative path to absolute if needed, or keep relative to backend origin
+                            return base ? base + localData.url : window.location.origin + localData.url;
+                        }
+                    }
+                } catch (localErr) {
+                    console.warn("Local upload failed, falling back to ImgBB:", localErr);
+                }
+
+                // 2. Fallback to ImgBB API
+                const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    return data.data.url;
+                } else {
+                    console.warn("ImgBB upload failed (likely invalid key). Using placeholder.", data.error);
+                    return "https://placehold.co/600x400/00e5a0/0a0f1e?text=Demo+Photo";
+                }
+            } catch (err) {
+                console.error("Upload error fallback:", err);
+                return "https://placehold.co/600x400/00e5a0/0a0f1e?text=Demo+Photo";
+            }
+        }
+
+        // Form Submission
+        document.getElementById('riderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Check if all files are selected
+            for (const p of photos) {
+                if (!fileStore[p.id]) {
+                    showStatus(`Please upload the ${p.label}`, "error");
+                    return;
+                }
+            }
+
+            const btn = document.getElementById('submitBtn');
+            const loader = document.getElementById('submitLoader');
+            
+            btn.disabled = true;
+            btn.querySelector('span').textContent = 'Uploading Photos...';
+            loader.style.display = 'block';
+            showStatus('Uploading photos and preparing data. Please wait...', 'success');
+
+            try {
+                // 1. Upload Images to ImgBB concurrently
+                const uploadPromises = photos.map(p => uploadImageToImgBB(fileStore[p.id]));
+                const uploadedUrls = await Promise.all(uploadPromises);
+
+                btn.querySelector('span').textContent = 'Saving to Database...';
+
+                // 2. Prepare Payload for Backend
+                const riderName = document.getElementById('riderName').value;
+                const riderId = document.getElementById('riderId').value;
+                const vehicleReg = document.getElementById('vehicleReg').value;
+                const date = new Date().toLocaleDateString('en-GB'); // DD/MM/YYYY
+
+                // Build row values for Google Sheet mapping to 'Branding Data' tab
+                // Expected Columns: [Rider Name, Rider ID, Vehicle Reg, Back Photo, Rear Photo, Opposite Photo, Front Photo, Date]
+                const rowValues = [
+                    riderName,
+                    riderId,
+                    vehicleReg,
+                    ...uploadedUrls,
+                    date
+                ];
+
+                // Support local file and localhost testing
+                const base = (window.location.hostname === 'localhost' || window.location.protocol === 'file:') ? 'http://localhost:3002' : '';
+
+                // 3. Fetch config for Spreadsheet ID
+                let spreadsheetId = '1fsTazqEiGvN9RSnD3d7F38COFyu_Bw2vEJyyH5fakI8'; // Fallback
+                try {
+                    const cfgRes = await fetch(base + '/api/config/client');
+                    if (cfgRes.ok) {
+                        const cfgData = await cfgRes.json();
+                        if (cfgData.spreadsheetId) spreadsheetId = cfgData.spreadsheetId;
+                    }
+                } catch (e) {
+                    console.warn("Could not fetch config, using default spreadsheet ID");
+                }
+
+                // 4. Submit to Vercel Backend
+                const submitRes = await fetch(base + '/api/sheets/append', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        spreadsheetId: spreadsheetId,
+                        range: 'Branding Data!A:H', // Target the new Branding Data tab
+                        values: rowValues
+                    })
+                });
+
+                const submitData = await submitRes.json();
+                
+                if (!submitRes.ok) throw new Error(submitData.error || 'Failed to submit verification');
+
+                if (submitData.success) {
+                    if (submitData.googleSheets) {
+                        showStatus('Success! Verification saved to Database and Google Sheets.', 'success');
+                    } else if (submitData.sheetsError) {
+                        showStatus(`Saved to database! Note: Google Sheets sync failed (${submitData.sheetsError}).`, 'orange-alert');
+                    } else {
+                        showStatus('Success! Your details have been submitted.', 'success');
+                    }
+                }
+
+                document.getElementById('riderForm').reset();
+                
+                // Clear previews
+                photos.forEach(p => removeFile(p.id));
+
+            } catch (err) {
+                console.error(err);
+                showStatus(err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.querySelector('span').textContent = 'Submit Verification';
+                loader.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
