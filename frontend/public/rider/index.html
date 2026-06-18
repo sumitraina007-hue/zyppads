@@ -458,7 +458,7 @@
             }
         }
 
-        // Upload to Local Server / Fallback to ImgBB
+        // Upload to Local Server proxying to ImgBB
         async function uploadImageToImgBB(file) {
             try {
                 // Compress image before upload to save bandwidth & time
@@ -475,38 +475,21 @@
                 
                 const base = (window.location.hostname === 'localhost' || window.location.protocol === 'file:') ? 'http://localhost:3002' : '';
                 
-                // 1. Try local server upload
-                try {
-                    const localRes = await fetch(base + '/api/upload', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    if (localRes.ok) {
-                        const localData = await localRes.json();
-                        if (localData.success) {
-                            // Convert relative path to absolute if needed, or keep relative to backend origin
-                            return base ? base + localData.url : window.location.origin + localData.url;
-                        }
-                    }
-                } catch (localErr) {
-                    console.warn("Local upload failed, falling back to ImgBB:", localErr);
-                }
-
-                // 2. Fallback to ImgBB API
-                const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                // Upload via backend proxy to ImgBB
+                const res = await fetch(base + '/api/upload/imgbb', {
                     method: 'POST',
                     body: formData
                 });
                 
+                if (!res.ok) throw new Error("Upload failed via server proxy");
                 const data = await res.json();
                 if (data.success) {
-                    return data.data.url;
+                    return data.url;
                 } else {
-                    console.warn("ImgBB upload failed (likely invalid key). Using placeholder.", data.error);
-                    return "https://placehold.co/600x400/00e5a0/0a0f1e?text=Demo+Photo";
+                    throw new Error(data.error || "Upload failed");
                 }
             } catch (err) {
-                console.error("Upload error fallback:", err);
+                console.error("Upload error:", err);
                 return "https://placehold.co/600x400/00e5a0/0a0f1e?text=Demo+Photo";
             }
         }
