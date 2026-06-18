@@ -52,46 +52,7 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
     res.json({ success: true, url: imageUrl });
 });
 
-// Proxy upload to ImgBB
-app.post('/api/upload/imgbb', upload.single('image'), async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: 'No file uploaded' });
-    }
-    
-    try {
-        const FormData = require('form-data');
-        const fetch = require('node-fetch');
-        const fs = require('fs');
 
-        const filePath = req.file.path;
-        const fileStream = fs.createReadStream(filePath);
-        
-        const form = new FormData();
-        form.append('image', fileStream);
-        
-        const apiKey = process.env.IMGBB_API_KEY || '8384336ddd9deb1bdac20bbaee43e4f4';
-        const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-            method: 'POST',
-            body: form
-        });
-        
-        const data = await imgbbRes.json();
-        
-        // Clean up local file after upload
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
-        
-        if (data.success) {
-            res.json({ success: true, url: data.data.url });
-        } else {
-            res.status(500).json({ error: data.error ? data.error.message : 'ImgBB upload failed' });
-        }
-    } catch (e) {
-        console.error("Proxy upload to ImgBB failed:", e.message);
-        res.status(500).json({ error: e.message });
-    }
-});
 
 // MongoDB schema and model for storing images directly as binary buffers
 const ImageSchema = new mongoose.Schema({
