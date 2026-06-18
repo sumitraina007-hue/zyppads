@@ -22,8 +22,11 @@ const PORT = process.env.PORT || 3002; // Using 3002 to avoid conflict with exis
 app.use(cors());
 app.use(express.json());
 
-// Ensure uploads folder exists
-const uploadsDir = path.join(__dirname, '../frontend/public/uploads');
+// Ensure uploads folder exists (Vercel serverless environment is read-only, except for /tmp)
+const uploadsDir = (process.env.VERCEL || process.env.NODE_ENV === 'production') 
+    ? '/tmp' 
+    : path.join(__dirname, '../frontend/public/uploads');
+
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
